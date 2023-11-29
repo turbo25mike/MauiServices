@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="BluetoothService.Example.MainPage"
+             xmlns:viewmodel="clr-namespace:BluetoothService.Example"
+             xmlns:models="clr-namespace:BluetoothService.Example"
+             x:Name="this"
+             x:DataType="viewmodel:MainViewModel">
+    <Grid RowDefinitions="Auto, *, 100" Margin="10">
+        <Label Text="{Binding Status, StringFormat=Status: {0}}" />
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding FoundDevices}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="models:PacketExt">
+                        <Grid ColumnDefinitions="*, Auto">
+                            <!--Column 1 -->
+                            <VerticalStackLayout>
+                                <HorizontalStackLayout>
+                                    <Label Text="{Binding Name}" Margin="10,0" />
+                                    <Label Text="{Binding RSSI}" />
+                                </HorizontalStackLayout>
+                                <HorizontalStackLayout>
+                                    <Label Text="MD: " Margin="10,0" />
+                                    <Label Text="{Binding ManufacturerDataString}" FontSize="8" VerticalTextAlignment="End"/>
+                                </HorizontalStackLayout>
+                                <HorizontalStackLayout>
+                                    <Label Text="SD: " Margin="10,0" />
+                                    <Label Text="{Binding ServiceDataString}" FontSize="8" VerticalTextAlignment="End" />
+                                </HorizontalStackLayout>
+                            </VerticalStackLayout>
+                            <!--Column 2 -->
+                            <VerticalStackLayout Grid.Column="1" HorizontalOptions="End" >
+                                <Label Text="{Binding LastSeen}" FontSize="8" />
+                                <Button Text="Connect" FontSize="10" HeightRequest="25" Command="{Binding BindingContext.ConnectCommand, Source={x:Reference Name=this}}" CommandParameter="{Binding}"/>
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </ScrollView>
+        <Button Grid.Row="2" Margin="20" IsEnabled="{Binding BluetoothEnabled}" Text="{Binding ButtonText}" Command="{Binding GetDataCommand}" HorizontalOptions="Fill" />
+    </Grid>
+</ContentPage>

@@ -1,0 +1,140 @@
+﻿using System.Collections.ObjectModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Turbo.Maui.Services;
+using Turbo.Maui.Services.Models;
+
+namespace BluetoothService.Example;
+
+public partial class MainViewModel : ObservableObject
+{
+    public MainViewModel(IBluetoothService bluetoothService)
+    {
+        _BluetoothService = bluetoothService;
+        _BluetoothService.PacketDiscovered += PacketDiscovered;
+        _BluetoothService.BluetoothStateChanged += (s, e) => CheckStatus();
+
+        CheckStatus();
+    }
+
+    [RelayCommand]
+    private async Task GetData()
+    {
+        if (await CheckPermissions() && CheckStatus())
+        {
+            if (!_BluetoothService.IsScanning)
+            {
+                Status = "Scanning...";
+                _BluetoothService.Scan();
+                ButtonText = "Stop";
+            }
+            else
+            {
+                Status = "Stopped";
+                ButtonText = "Scan";
+                _BluetoothService.Stop();
+            }
+        }
+    }
+
+
+    [RelayCommand]
+    private async Task Connect(PacketExt selectedDevice)
+    {
+        await Shell.Current.GoToAsync(nameof(DevicePage), new Dictionary<string, object>() { { "device", selectedDevice } });
+    }
+
+    private bool CheckStatus()
+    {
+        if (_BluetoothService.IsPoweredOn)
+        {
+            Status = "Powered On";
+            BluetoothEnabled = true;
+            return true;
+        }
+        else
+        {
+            Status = "Powered Off";
+            BluetoothEnabled = false;
+            return false;
+        }
+    }
+
+    private async Task<bool> CheckPermissions()
+    {
+        var permissions = new BluetoothPermissions();
+        var permissionStatus = await permissions.CheckStatusAsync();
+        if (permissionStatus != PermissionStatus.Granted)
+        {
+            if (Application.Current?.MainPage != null)
+                await Application.Current.MainPage.DisplayAlert("Permissions", "Our app needs your permission to ... Please allow access when prompted.", "Continue");
+            permissionStatus = await permissions.RequestAsync();
+        }
+
+        Status = $"Access {PermissionStatus.Granted}";
+        if (permissionStatus == PermissionStatus.Granted)
+            return true;
+
+        ButtonText = "Request Permission";
+        return false;
+    }
+
+    private void PacketDiscovered(object? sender, EventDataArgs<Packet> e)
+    {
+        if (string.IsNullOrEmpty(e.Data.Name)) return;
+        var found = FoundDevices.FirstOrDefault(x => x.ID == e.Data.ID);
+        if (found == null)
+            FoundDevices.Add(new(e.Data));
+        else
+            found.Update(e.Data);
+    }
+
+
+    [ObservableProperty]
+    private string _Status = "Awaiting User";
+
+    [ObservableProperty]
+    private ObservableCollection<PacketExt> _FoundDevices = new();
+
+    [ObservableProperty]
+    private string _ButtonText = "Scan";
+
+    [ObservableProperty]
+    private bool _BluetoothEnabled = false;
+
+    private readonly IBluetoothService _BluetoothService;
+}
+
+public partial class PacketExt : Packet
+{
+    public PacketExt(Packet p)
+    {
+        ID = p.ID;
+        Update(p);
+    }
+
+    public void Update(Packet p)
+    {
+        LastSeen = DateTime.Now;
+        RSSI = p.RSSI;
+        Name = p.Name;
+        InRange = p.InRange;
+        TxPower = p.TxPower;
+        ManufacturerData = p.ManufacturerData;
+        ServiceData = p.ServiceData;
+        ManufacturerDataString = GetString(p.ManufacturerData);
+        ServiceDataString = GetString(p.ServiceData);
+    }
+
+    private string GetString(byte[] bytes) => bytes == null ? "" : $"{string.Join(", ", bytes)}";
+
+    [ObservableProperty]
+    private string _ManufacturerDataString = "";
+
+    [ObservableProperty]
+    private string _ServiceDataString = "";
+
+
+    [ObservableProperty]
+    private DateTime _LastSeen;
+}

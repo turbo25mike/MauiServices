@@ -1,0 +1,175 @@
+﻿using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Text.RegularExpressions;
+using HttpClientHandler = Turbo.Maui.Services.Models.HttpClientHandler;
+
+namespace Turbo.Maui.Services;
+
+public interface IWebService : ITurboService
+{
+    Task<T> Get<T>(string route);
+    Task<T> Get<T>(Uri route);
+    Task<byte[]> GetFile(string route);
+    Task<long> GetFileSize(string url);
+    Task<DateTime> GetDateLastModified(string route);
+    Task Post(object obj, string route);
+    Task<T> Delete<T>(string route);
+    Task Put(string route, object content = null);
+    void UpdateTimeout(TimeSpan? timeout = null);
+    void AddAuthorization(string token);
+    void RemoveAuthorization();
+}
+
+public class WebService : IWebService
+{
+    public WebService(IKeyService key, IHttpHandler client = null) { _KeyService = key; _Client = client ?? new HttpClientHandler(); }
+
+    #region Public Methods
+
+    public void AddAuthorization(string token) => _Client.AddAuthorization(token);
+
+    public async Task<byte[]> GetFile(string route) => await _Client.GetByteArrayAsync(GetUri(route));
+
+    public async Task<long> GetFileSize(string route)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, GetUri(route));
+        // in order to keep the response as small as possible, set the requested byte range to [0,0] (i.e., only the first byte)
+        request.Headers.Range = new RangeHeaderValue(from: 0, to: 0);
+
+        using var response = await _Client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        if (response.StatusCode != HttpStatusCode.PartialContent)
+            throw new WebException($"expected partial content response ({HttpStatusCode.PartialContent}), instead received: {response.StatusCode}");
+
+        var contentRange = response.Content.Headers.GetValues(@"content-range").Single();
+        var lengthString = Regex.Match(contentRange, @"(?<=^bytes\s[0-9]+\-[0-9]+/)[0-9]+$").Value;
+        return long.Parse(lengthString);
+    }
+
+    public async Task<DateTime> GetDateLastModified(string route)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, GetUri(route));
+        // in order to keep the response as small as possible, set the requested byte range to [0,0] (i.e., only the first byte)
+        request.Headers.Range = new RangeHeaderValue(from: 0, to: 0);
+
+        using var response = await _Client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        if (response.StatusCode != HttpStatusCode.PartialContent)
+            throw new WebException($"expected partial content response ({HttpStatusCode.PartialContent}), instead received: {response.StatusCode}");
+
+        return response.Content.Headers.LastModified?.UtcDateTime ?? DateTime.MinValue;
+    }
+
+    public async Task<T> Get<T>(Uri route) => await Call<T>(async () => await _Client.GetAsync(route));
+
+    public Task<T> Get<T>(string route) => Call<T>(async () => await _Client.GetAsync(GetUri(route)));
+
+    public async Task Put(string route, object content = null) => await Call(async () => await _Client.PutAsync(GetUri(route), GetJsonPatchContent(content)));
+
+    public async Task Post(object obj, string route) => await Call(async () => await _Client.PostAsync(GetUri(route), GetJsonContent(obj)));
+
+    public async Task<T> Delete<T>(string route) => await Call<T>(async () => await _Client.DeleteAsync(GetUri(route)));
+
+    public void UpdateTimeout(TimeSpan? timeout = null) => _Client.UpdateTimeout(timeout);
+
+    public void RemoveAuthorization() => _Client.RemoveAuthorization();
+
+    #endregion
+
+    #region Private Methods
+
+    private async Task Call(Func<Task<HttpResponseMessage>> function)
+    {
+        try
+        {
+            var r = await function.Invoke();
+            Log($"{nameof(HandleResponse)} {r.StatusCode.GetHashCode()} {r.ReasonPhrase}, {r.RequestMessage.RequestUri}");
+            if (!r.IsSuccessStatusCode) throw new ArgumentOutOfRangeException();
+        }
+        catch (Exception ex)
+        {
+            Log($"{function.Method.Name} - exception: {ex}");
+            return;
+        }
+    }
+
+    private async Task<T> Call<T>(Func<Task<HttpResponseMessage>> function)
+    {
+        try
+        {
+            var response = await function.Invoke();
+            return await HandleResponse<T>(response);
+        }
+        catch (Exception ex)
+        {
+            Log($"{function.Method.Name} - exception: {ex}");
+            return default;
+        }
+    }
+
+    private StringContent GetJsonPatchContent(object obj) => new(GetJson(obj), Encoding.UTF8, "application/json-patch+json");
+
+    private StringContent GetJsonContent(object obj) => new(GetJson(obj), Encoding.UTF8, "application/json");
+
+    private static string GetJson(object obj) => obj.GetType() == typeof(string) ? obj.ToString() : JsonSerializer.Serialize(obj);
+
+    private async Task<T> HandleResponse<T>(HttpResponseMessage r)
+    {
+        if (r.IsSuccessStatusCode)
+        {
+            var content = await r.Content.ReadAsStringAsync();
+            try
+            {
+                Log($"{nameof(HandleResponse)}<{typeof(T).Name}> {r.StatusCode.GetHashCode()}, {r.RequestMessage.RequestUri} => {content}");
+                if (IsSimple(typeof(T)))
+                    return (T)Convert.ChangeType(content, typeof(T));
+                else
+                    return (string.IsNullOrWhiteSpace(content)) ?
+                        default : JsonSerializer.Deserialize<T>(content);
+            }
+            catch (Exception ex)
+            {
+
+                Log($"{nameof(HandleResponse)}<{typeof(T).Name}> {ex}");
+                return default;
+            }
+        }
+        Log($"{nameof(HandleResponse)}<{typeof(T).Name}> {r.StatusCode.GetHashCode()} {r.ReasonPhrase}, {r.RequestMessage.RequestUri}");
+        return default;
+    }
+
+    private bool IsSimple(Type type)
+    {
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>))
+        {
+            // nullable type, check if the nested type is simple.
+            return IsSimple(type.GetGenericArguments()[0]);
+        }
+        return type.IsPrimitive
+               || type.IsEnum
+               || type == typeof(string)
+               || type == typeof(decimal);
+    }
+
+    private Uri GetUri(string route)
+    {
+        if (route.StartsWith("http")) return new Uri(route);
+        var apiUrl = _KeyService.GetKey<string>("API_KEY") ?? "";
+        var uri = new Uri($"{apiUrl}{route}");
+        return uri;
+    }
+
+    private static void Log(string error) => Debug.WriteLine($"{nameof(WebService)}: {error}");
+
+    #endregion
+
+    #region Properties
+
+    private readonly IKeyService _KeyService;
+    private readonly IHttpHandler _Client;
+
+    #endregion
+}
