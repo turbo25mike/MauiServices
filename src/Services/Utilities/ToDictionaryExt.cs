@@ -2,19 +2,19 @@
 
 namespace Turbo.Maui.Services.Utilities;
 
-public static class ToDictionaryExtension
+internal static class ToDictionaryExtension
 {
-    public static IDictionary<string, object>[] ToDictionary(this IEnumerable<object> source)
+    internal static IDictionary<string, object>[] ToDictionary(this IEnumerable<object> source)
     {
         return source.Select(s => s.ToDictionary()).ToArray();
     }
 
-    public static IDictionary<string, object> ToDictionary(this object source)
+    internal static IDictionary<string, object> ToDictionary(this object source)
     {
         return source.ToDictionary<object>();
     }
 
-    public static IDictionary<string, T> ToDictionary<T>(this object source)
+    internal static IDictionary<string, T> ToDictionary<T>(this object source)
     {
         if (source == null)
             ThrowExceptionWhenSourceArgumentIsNull();
@@ -26,7 +26,7 @@ public static class ToDictionaryExtension
         return dictionary;
     }
 
-    public static void AddPropertyToDictionary(this IDictionary<string, object> dict, string propName, object propVal)
+    internal static void AddPropertyToDictionary(this IDictionary<string, object> dict, string propName, object propVal)
     {
         if (!dict.ContainsKey(propName)) dict.Add(new KeyValuePair<string, object>(propName, propVal));
         dict[propName] = propVal;

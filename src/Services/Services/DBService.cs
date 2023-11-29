@@ -5,12 +5,11 @@ namespace Turbo.Maui.Services;
 
 public interface IDBService
 {
-    //Task CreateTable<T>() where T : new();
     Task DeleteTable<T>() where T : new();
-    Task Delete<T>(string id, bool sendToServer = true) where T : new();
-    Task Insert<T>(T model, bool sendToServer = true) where T : new();
-    Task Patch<T>(string id, object data, bool sendToServer = true) where T : new();
-    Task Patch<T>(string id, IDictionary<string, object> data, bool sendToServer = true) where T : new();
+    Task Delete<T>(string id) where T : new();
+    Task Insert<T>(T model) where T : new();
+    Task Patch<T>(string id, object data) where T : new();
+    Task Patch<T>(string id, IDictionary<string, object> data) where T : new();
     Task<T> Select<T>(int pk) where T : new();
     Task<T> Select<T>(string pk) where T : new();
     Task<List<T>> SelectAll<T>() where T : new();
@@ -22,7 +21,7 @@ public class DBService : IDBService
 {
     public DBService()
     {
-        _DB = new SQLiteAsyncConnection(_ConnectionString, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.SharedCache);
+        _DB = new SQLiteAsyncConnection(ConnectionString, SQLiteOpenFlags.Create | SQLiteOpenFlags.ReadWrite | SQLiteOpenFlags.SharedCache);
     }
 
     public async Task DeleteDB(params string[] explicitTables)
@@ -39,14 +38,14 @@ public class DBService : IDBService
 
     public async Task DeleteTable<T>() where T : new() { if (await TableExists<T>()) await _DB.DropTableAsync<T>(); }
 
-    public async Task Insert<T>(T model, bool sendToServer = true) where T : new()
+    public async Task Insert<T>(T model) where T : new()
     {
         Debug.WriteLine($"Inserting Record of type: {typeof(T).Name}");
         if (model == null) return;
         await CreateTable<T>();
         await _DB.InsertAsync(model);
     }
-    public async Task Delete<T>(string id, bool sendToServer = true) where T : new()
+    public async Task Delete<T>(string id) where T : new()
     {
         var dbDeleteData = await Select<T>(id);
         if (dbDeleteData == null) return;
@@ -54,8 +53,8 @@ public class DBService : IDBService
         if (await TableExists<T>()) await _DB.DeleteAsync(dbDeleteData);
     }
 
-    public async Task Patch<T>(string id, object data, bool sendToServer = true) where T : new() => await Patch<T>(id, data.ToDictionary(), sendToServer);
-    public async Task Patch<T>(string id, IDictionary<string, object> data, bool sendToServer = true) where T : new()
+    public async Task Patch<T>(string id, object data) where T : new() => await Patch<T>(id, data.ToDictionary());
+    public async Task Patch<T>(string id, IDictionary<string, object> data) where T : new()
     {
         Debug.WriteLine($"Patch Record of type: {typeof(T).Name}");
         if (data == null) return;
@@ -173,6 +172,5 @@ public class DBService : IDBService
     #endregion
 
     readonly SQLiteAsyncConnection _DB;
-    private string _ConnectionString => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "App.db3");
+    private static string ConnectionString => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "App.db3");
 }
-
