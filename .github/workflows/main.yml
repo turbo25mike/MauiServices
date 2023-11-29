@@ -17,11 +17,13 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v1
+
+      - name: Install Workloads
+	run: dotnet workload restore
           
       - name: Build solution and generate NuGet package
         run: |  
           cd src/Services
-	  dotnet workload restore
           dotnet pack -c Release -o out  
 
       - name: Push generated package to Nuget registry
