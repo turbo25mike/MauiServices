@@ -19,6 +19,7 @@
 		<PackageReadmeFile>ReadMe.md</PackageReadmeFile>
 		<VersionPrefix>8.0.0</VersionPrefix>
 		<Authors>Jeff Johnson</Authors>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
 	<PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Release|net8.0-ios|AnyCPU'">
 		<CreatePackage>false</CreatePackage>
