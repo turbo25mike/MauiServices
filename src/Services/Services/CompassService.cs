@@ -1,6 +1,6 @@
 ﻿namespace Turbo.Maui.Services;
 
-public interface ICompassService : ITurboService
+public interface ICompassService
 {
     void StartMonitoring();
     void StopMonitoring();

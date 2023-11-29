@@ -1,6 +1,6 @@
 ﻿namespace Turbo.Maui.Services;
 
-public interface IFileService : ITurboService
+public interface IFileService
 {
     Task<byte[]> ReadAllBytes(string fileName);
     Task<string> ReadAllText(string fileName);

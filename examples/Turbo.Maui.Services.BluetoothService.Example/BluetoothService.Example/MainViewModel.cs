@@ -118,7 +118,6 @@ public partial class PacketExt : Packet
         LastSeen = DateTime.Now;
         RSSI = p.RSSI;
         Name = p.Name;
-        InRange = p.InRange;
         TxPower = p.TxPower;
         ManufacturerData = p.ManufacturerData;
         ServiceData = p.ServiceData;

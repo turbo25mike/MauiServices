@@ -1,6 +1,6 @@
 ﻿namespace Turbo.Maui.Services;
 
-public interface IBluetoothService : ITurboService
+public interface IBluetoothService
 {
     IConnectedDevice ConnectedDevice { get; }
     void Stop();
@@ -144,12 +144,7 @@ public class BluetoothService : IBluetoothService
 
     private void DeviceReady() => DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
 
-    private void DeviceDiscovered(object sender, EventDataArgs<Packet> e)
-    {
-        e.Data.InRange = true;
-        e.Data.UpdatedDate = DateTime.Now;
-        PacketDiscovered?.Invoke(this, e);
-    }
+    private void DeviceDiscovered(object sender, EventDataArgs<Packet> e) => PacketDiscovered?.Invoke(this, e);
 
     //Specific to Android
     //Android bubbles an event through the BLEBroadcastReciever

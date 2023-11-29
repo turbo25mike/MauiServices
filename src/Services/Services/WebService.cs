@@ -8,7 +8,7 @@ using HttpClientHandler = Turbo.Maui.Services.Models.HttpClientHandler;
 
 namespace Turbo.Maui.Services;
 
-public interface IWebService : ITurboService
+public interface IWebService
 {
     Task<T> Get<T>(string route);
     Task<T> Get<T>(Uri route);

@@ -1,6 +1,6 @@
 ﻿namespace Turbo.Maui.Services;
 
-public interface IKeyService : ITurboService
+public interface IKeyService
 {
     string CurrentEnvironmentName { get; }
     string[] GetEnvironmentNames();

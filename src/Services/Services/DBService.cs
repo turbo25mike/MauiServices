@@ -3,7 +3,7 @@ using SQLite;
 
 namespace Turbo.Maui.Services;
 
-public interface IDBService : ITurboService
+public interface IDBService
 {
     //Task CreateTable<T>() where T : new();
     Task DeleteTable<T>() where T : new();

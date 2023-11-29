@@ -2,7 +2,7 @@
 
 namespace Turbo.Maui.Services;
 
-public interface IOrientationService : ITurboService
+public interface IOrientationService
 {
     void StartMonitoring();
     void StopMonitoring();

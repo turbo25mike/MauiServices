@@ -12,10 +12,6 @@ public partial class Packet : ObservableObject
     private int _RSSI;
     [ObservableProperty]
     private int _TxPower;
-    [ObservableProperty]
-    private DateTime? _UpdatedDate;
-    [ObservableProperty]
-    private bool _InRange;
 
     public double Distance
     {
