@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     name: Update NuGet package
     steps:
 
@@ -23,5 +23,5 @@ jobs:
           cd src/Services
           dotnet pack -c Release -o out  
 
-      - name: Push generated package to GitHub registry
+      - name: Push generated package to Nuget registry
         run: dotnet nuget push ./src/Services/out/*.nupkg --api-key ${{secrets.NUGET_TOKEN}} --source https://api.nuget.org/v3/index.json
