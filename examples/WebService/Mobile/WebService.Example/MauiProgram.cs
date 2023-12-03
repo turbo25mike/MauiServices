@@ -24,6 +24,9 @@ public static class MauiProgram
 #endif
 
         builder.Services.AddScoped<MainPage, MainViewModel>();
+        builder.Services.AddScoped<MemberPage, MemberViewModel>();
+
+        Routing.RegisterRoute(nameof(MemberPage), typeof(MemberPage));
 
         return builder.Build();
     }

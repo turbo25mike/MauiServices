@@ -10,14 +10,14 @@ namespace Turbo.Maui.Services;
 
 public interface IWebService
 {
-    Task<T> Get<T>(string route);
-    Task<T> Get<T>(Uri route);
+    Task<HttpResponseData<T>> Get<T>(string route);
+    Task<HttpResponseData<T>> Get<T>(Uri route);
     Task<byte[]> GetFile(string route);
-    Task<long> GetFileSize(string url);
-    Task<DateTime> GetDateLastModified(string route);
-    Task Post(object obj, string route);
-    Task<T> Delete<T>(string route);
-    Task Put(string route, object content = null);
+    Task<HttpResponseData<long>> GetFileSize(string url);
+    Task<HttpResponseData<DateTime>> GetDateLastModified(string route);
+    Task<HttpResponse> Post(string route, object obj);
+    Task<HttpResponse> Delete(string route);
+    Task<HttpResponse> Put(string route, PatchDocument patch);
     void UpdateTimeout(TimeSpan? timeout = null);
     void AddAuthorization(string token);
     void RemoveAuthorization();
@@ -33,7 +33,7 @@ public class WebService : IWebService
 
     public async Task<byte[]> GetFile(string route) => await _Client.GetByteArrayAsync(GetUri(route));
 
-    public async Task<long> GetFileSize(string route)
+    public async Task<HttpResponseData<long>> GetFileSize(string route)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, GetUri(route));
         // in order to keep the response as small as possible, set the requested byte range to [0,0] (i.e., only the first byte)
@@ -46,10 +46,16 @@ public class WebService : IWebService
 
         var contentRange = response.Content.Headers.GetValues(@"content-range").Single();
         var lengthString = Regex.Match(contentRange, @"(?<=^bytes\s[0-9]+\-[0-9]+/)[0-9]+$").Value;
-        return long.Parse(lengthString);
+        return new HttpResponseData<long>()
+        {
+            Data = long.Parse(lengthString),
+            ReasonPhrase = response.ReasonPhrase,
+            StatusCode = response.StatusCode,
+            WasSuccessful = response.IsSuccessStatusCode
+        };
     }
 
-    public async Task<DateTime> GetDateLastModified(string route)
+    public async Task<HttpResponseData<DateTime>> GetDateLastModified(string route)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, GetUri(route));
         // in order to keep the response as small as possible, set the requested byte range to [0,0] (i.e., only the first byte)
@@ -60,18 +66,24 @@ public class WebService : IWebService
         if (response.StatusCode != HttpStatusCode.PartialContent)
             throw new WebException($"expected partial content response ({HttpStatusCode.PartialContent}), instead received: {response.StatusCode}");
 
-        return response.Content.Headers.LastModified?.UtcDateTime ?? DateTime.MinValue;
+        return new HttpResponseData<DateTime>()
+        {
+            Data = response.Content.Headers.LastModified?.UtcDateTime ?? DateTime.MinValue,
+            ReasonPhrase = response.ReasonPhrase,
+            StatusCode = response.StatusCode,
+            WasSuccessful = response.IsSuccessStatusCode
+        };
     }
 
-    public async Task<T> Get<T>(Uri route) => await Call<T>(async () => await _Client.GetAsync(route));
+    public async Task<HttpResponseData<T>> Get<T>(Uri route) => await Call<T>(async () => await _Client.GetAsync(route));
 
-    public Task<T> Get<T>(string route) => Call<T>(async () => await _Client.GetAsync(GetUri(route)));
+    public Task<HttpResponseData<T>> Get<T>(string route) => Call<T>(async () => await _Client.GetAsync(GetUri(route)));
 
-    public async Task Put(string route, object content = null) => await Call(async () => await _Client.PutAsync(GetUri(route), GetJsonPatchContent(content)));
+    public async Task<HttpResponse> Put(string route, PatchDocument patch) => await Call(async () => await _Client.PutAsync(GetUri(route), GetJsonPatchContent(patch)));
 
-    public async Task Post(object obj, string route) => await Call(async () => await _Client.PostAsync(GetUri(route), GetJsonContent(obj)));
+    public async Task<HttpResponse> Post(string route, object obj) => await Call(async () => await _Client.PostAsync(GetUri(route), GetJsonContent(obj)));
 
-    public async Task<T> Delete<T>(string route) => await Call<T>(async () => await _Client.DeleteAsync(GetUri(route)));
+    public async Task<HttpResponse> Delete(string route) => await Call(async () => await _Client.DeleteAsync(GetUri(route)));
 
     public void UpdateTimeout(TimeSpan? timeout = null) => _Client.UpdateTimeout(timeout);
 
@@ -81,65 +93,50 @@ public class WebService : IWebService
 
     #region Private Methods
 
-    private async Task Call(Func<Task<HttpResponseMessage>> function)
+    private static async Task<HttpResponse> Call(Func<Task<HttpResponseMessage>> function)
     {
         try
         {
             var r = await function.Invoke();
-            Log($"{nameof(HandleResponse)} {r.StatusCode.GetHashCode()} {r.ReasonPhrase}, {r.RequestMessage.RequestUri}");
+            Log($"HttpResponse {r.StatusCode.GetHashCode()} {r.ReasonPhrase}, {r.RequestMessage.RequestUri}");
             if (!r.IsSuccessStatusCode) throw new ArgumentOutOfRangeException();
+            return new HttpResponse(r);
         }
         catch (Exception ex)
         {
             Log($"{function.Method.Name} - exception: {ex}");
-            return;
+            return new HttpResponse() { StatusCode = HttpStatusCode.InternalServerError, WasSuccessful = false, ReasonPhrase = ex.ToString() };
         }
     }
 
-    private async Task<T> Call<T>(Func<Task<HttpResponseMessage>> function)
+    private static async Task<HttpResponseData<T>> Call<T>(Func<Task<HttpResponseMessage>> function)
     {
         try
         {
             var response = await function.Invoke();
-            return await HandleResponse<T>(response);
+            return await HttpResponseData<T>.Create(response);
         }
         catch (Exception ex)
         {
             Log($"{function.Method.Name} - exception: {ex}");
-            return default;
+            return new HttpResponseData<T>()
+            {
+                StatusCode = HttpStatusCode.ServiceUnavailable,
+                ReasonPhrase = ex.ToString(),
+                WasSuccessful = false
+            };
         }
     }
 
-    private StringContent GetJsonPatchContent(object obj) => new(GetJson(obj), Encoding.UTF8, "application/json-patch+json");
+    private StringContent GetJsonPatchContent(PatchDocument patch)
+    {
+        var json = patch.Serialize();
+        return new(json, Encoding.UTF8, "application/json-patch+json");
+    }
 
     private StringContent GetJsonContent(object obj) => new(GetJson(obj), Encoding.UTF8, "application/json");
 
     private static string GetJson(object obj) => obj.GetType() == typeof(string) ? obj.ToString() : JsonSerializer.Serialize(obj);
-
-    private async Task<T> HandleResponse<T>(HttpResponseMessage r)
-    {
-        if (r.IsSuccessStatusCode)
-        {
-            var content = await r.Content.ReadAsStringAsync();
-            try
-            {
-                Log($"{nameof(HandleResponse)}<{typeof(T).Name}> {r.StatusCode.GetHashCode()}, {r.RequestMessage.RequestUri} => {content}");
-                if (IsSimple(typeof(T)))
-                    return (T)Convert.ChangeType(content, typeof(T));
-                else
-                    return (string.IsNullOrWhiteSpace(content)) ?
-                        default : JsonSerializer.Deserialize<T>(content);
-            }
-            catch (Exception ex)
-            {
-
-                Log($"{nameof(HandleResponse)}<{typeof(T).Name}> {ex}");
-                return default;
-            }
-        }
-        Log($"{nameof(HandleResponse)}<{typeof(T).Name}> {r.StatusCode.GetHashCode()} {r.ReasonPhrase}, {r.RequestMessage.RequestUri}");
-        return default;
-    }
 
     private bool IsSimple(Type type)
     {

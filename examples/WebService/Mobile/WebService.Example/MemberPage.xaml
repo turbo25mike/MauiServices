@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:viewmodel="clr-namespace:WebService.Example"
+             x:Class="WebService.Example.MemberPage"
+             Title="MemberPage"
+             x:DataType="viewmodel:MemberViewModel">
+    <Grid RowDefinitions="*, Auto">
+        <VerticalStackLayout Margin="10">
+            <Label Text="{Binding Member.CreatedDate, StringFormat='Added: {0}'}" FontSize="10" HorizontalOptions="End" />
+            <Label Text="{Binding Member.UpdatedDate, StringFormat='Updated: {0}'}" FontSize="10" HorizontalOptions="End" />
+
+            <Editor WidthRequest="200" HorizontalOptions="StartAndExpand" Text="{Binding Member.FirstName}" IsReadOnly="{Binding InEditMode, Converter={StaticResource InvertedBoolConverter}}" />
+            <Editor WidthRequest="200" HorizontalOptions="StartAndExpand" Text="{Binding Member.LastName}" IsReadOnly="{Binding InEditMode, Converter={StaticResource InvertedBoolConverter}}" />
+            <Label Text="{Binding Member.AcceptedEulaVersion, StringFormat='EULA Version: {0}'}" />
+
+            <HorizontalStackLayout>
+                <Label Text="Measurement" VerticalOptions="Center" Margin="0,0,10,0" />
+                <Picker MinimumWidthRequest="80" HorizontalOptions="EndAndExpand" IsEnabled="{Binding InEditMode}" FontSize="18"  HorizontalTextAlignment="End" />
+            </HorizontalStackLayout>
+        </VerticalStackLayout>
+        <VerticalStackLayout Grid.Row="1" Padding="10">
+            <Button Text="Edit" Margin="3" Command="{Binding EditCommand}" IsVisible="{Binding InEditMode, Converter={StaticResource InvertedBoolConverter}}" />
+            <Button Text="Apply" BackgroundColor="DarkGreen" Margin="3" Command="{Binding UpdateCommand}" IsVisible="{Binding InEditMode}" />
+            <Button Text="Cancel" BackgroundColor="DarkSlateBlue" Margin="3" Command="{Binding CancelCommand}" IsVisible="{Binding InEditMode}" />
+        </VerticalStackLayout>
+    </Grid>
+</ContentPage>

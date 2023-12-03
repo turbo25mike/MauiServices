@@ -1,0 +1,31 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 25.0.1706.7
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Turbo.Maui.Services.Examples.API", "Turbo.Maui.Services.Examples.API\Turbo.Maui.Services.Examples.API.csproj", "{C888F438-047F-4837-A3CA-469C52129F4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example.Shared.Models", "Example.Shared.Models\Example.Shared.Models.csproj", "{8C9C05CF-D199-4F6E-B4AC-B172D7EBB951}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C888F438-047F-4837-A3CA-469C52129F4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C888F438-047F-4837-A3CA-469C52129F4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C888F438-047F-4837-A3CA-469C52129F4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C888F438-047F-4837-A3CA-469C52129F4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8C9C05CF-D199-4F6E-B4AC-B172D7EBB951}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8C9C05CF-D199-4F6E-B4AC-B172D7EBB951}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8C9C05CF-D199-4F6E-B4AC-B172D7EBB951}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8C9C05CF-D199-4F6E-B4AC-B172D7EBB951}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3C3DFABB-D816-4AD3-A906-F8FE022F79EC}
+	EndGlobalSection
+EndGlobal

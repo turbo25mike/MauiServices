@@ -64,9 +64,11 @@
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
 		<PackageReference Include="CommunityToolkit.Maui" Version="7.0.0" />
+		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\src\Services\Turbo.Maui.Services.csproj" />
+	  <ProjectReference Include="..\..\..\..\src\Services\Turbo.Maui.Services.csproj" />
+	  <ProjectReference Include="..\..\API\Example.Shared.Models\Example.Shared.Models.csproj" />
 	</ItemGroup>
 </Project>

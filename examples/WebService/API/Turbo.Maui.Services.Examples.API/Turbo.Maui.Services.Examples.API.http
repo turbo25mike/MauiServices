@@ -1,0 +1,7 @@
+﻿@Turbo.Maui.Services.Examples.API_HostAddress = http://localhost:5246
+
+GET {{Turbo.Maui.Services.Examples.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+

@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="WebService.Example.MainPage"
+             xmlns:models="clr-namespace:Turbo.Maui.Services.Examples.Shared.Models;assembly=Example.Shared.Models"
+             xmlns:viewmodel="clr-namespace:WebService.Example"
+             x:DataType="viewmodel:MainViewModel"
+             x:Name="this">
+
+    <Grid Margin="10" RowDefinitions="Auto, *, Auto">
+        <Label Text="{Binding Heading}" Style="{StaticResource Headline}"/>
+        <ScrollView Grid.Row="1">
+            <VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding Members}">
+                <BindableLayout.ItemTemplate>
+                    <DataTemplate x:DataType="models:ShortUser">
+                        <SwipeView Margin="0,1" BackgroundColor="LightGray">
+                            <SwipeView.RightItems>
+                                <SwipeItemView BackgroundColor="DarkRed" Command="{Binding Path=BindingContext.DeleteCommand, Source={x:Reference this}}" CommandParameter="{Binding}">
+                                    <Grid WidthRequest="80">
+                                        <Label Text="Delete" TextColor="White" VerticalOptions="Center" HorizontalOptions="Center" />
+                                    </Grid>
+                                </SwipeItemView>
+                            </SwipeView.RightItems>
+                            <VerticalStackLayout>
+                                <VerticalStackLayout.GestureRecognizers>
+                                    <TapGestureRecognizer NumberOfTapsRequired="1" Command="{Binding BindingContext.MemberSelectedCommand, Source={x:Reference this}}" CommandParameter="{Binding}" />
+                                </VerticalStackLayout.GestureRecognizers>
+                                <Label Text="Avenger:" />
+                                <Label Text="{Binding FullName}" />
+                            </VerticalStackLayout>
+                        </SwipeView>
+                    </DataTemplate>
+                </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
+        </ScrollView>
+        <VerticalStackLayout Grid.Row="2" Spacing="5">
+        <Button Text="Assemble" Command="{Binding GetDataCommand}" HorizontalOptions="Fill" />
+        <Button Text="Add Member" Command="{Binding GetDataCommand}" HorizontalOptions="Fill" />
+        </VerticalStackLayout>
+    </Grid>
+
+</ContentPage>
+
