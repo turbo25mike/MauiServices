@@ -19,6 +19,8 @@ public enum PatchOp { add, remove, replace, move, copy, test }
 
 public class Patch
 {
+    public Patch() { }
+
     public Patch(string prop, object propVal, PatchOp operation = PatchOp.replace)
     {
         Path = $"/" + prop.TrimStart('/');
@@ -27,9 +29,9 @@ public class Patch
     }
 
     [JsonPropertyName("path")]
-    public string Path { get; private set; }
+    public string Path { get; set; } = "";
     [JsonPropertyName("op")]
-    public PatchOp Op { get; private set; }
+    public PatchOp Op { get; set; } = PatchOp.replace;
     [JsonPropertyName("value")]
-    public object Value { get; private set; }
+    public object Value { get; set; } = new();
 }
