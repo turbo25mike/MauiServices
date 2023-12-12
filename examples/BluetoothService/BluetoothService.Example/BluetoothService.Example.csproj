@@ -72,4 +72,10 @@
 	<ItemGroup>
 	  <ProjectReference Include="..\..\..\src\Services\Turbo.Maui.Services.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="Utilities\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Utilities\" />
+	</ItemGroup>
 </Project>

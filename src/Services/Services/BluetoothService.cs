@@ -6,7 +6,7 @@ public interface IBluetoothService
     void Stop();
     void Scan(string[] uuids = null);
     void ConnectTo(string deviceID);
-    void SetNotifications(string service, string characteristic);
+    Task SetNotifications(string service, string characteristic);
     Task<int> RequestMTU(int size);
     void Write(IBLERequest request);
     Task WriteAsync(IBLERequest request);
@@ -105,7 +105,7 @@ public class BluetoothService : IBluetoothService
         return _IsFetchingData.Task;
     }
 
-    public void SetNotifications(string service, string characteristic)
+    public async Task SetNotifications(string service, string characteristic)
     {
         ConnectedDevice.Read(service, characteristic, (e) =>
         {
@@ -114,6 +114,10 @@ public class BluetoothService : IBluetoothService
                 _IsFetchingData.TrySetResult(_CurrentRequest);
             DeviceMessageReceived?.Invoke(this, new(e.Value));
         }, true);
+
+#if ANDROID
+        await Task.Delay(250);
+#endif
     }
 
     #endregion

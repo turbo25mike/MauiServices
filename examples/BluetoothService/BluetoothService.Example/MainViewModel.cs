@@ -25,7 +25,8 @@ public partial class MainViewModel : ObservableObject
             if (!_BluetoothService.IsScanning)
             {
                 Status = "Scanning...";
-                _BluetoothService.Scan();
+                //_BluetoothService.Scan();  //open for all BLE devices
+                _BluetoothService.Scan(new[] { SERVICEA }); //locked down to specific BLE devices
                 ButtonText = "Stop";
             }
             else
@@ -103,6 +104,8 @@ public partial class MainViewModel : ObservableObject
     private bool _BluetoothEnabled = false;
 
     private readonly IBluetoothService _BluetoothService;
+
+    public const string SERVICEA = "0000FCF9-0000-1000-8000-00805F9B34FB";
 }
 
 public partial class PacketExt : Packet
