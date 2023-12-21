@@ -3,7 +3,7 @@
 public interface IBluetoothAdapter
 {
     IConnectedDevice ConnectedDevice { get; }
-    Task<bool> StartScanningForDevices(string[] uuids = null);
+    Task<bool> StartScanningForDevices(string[] uuids = null, int? manufacturerID = null);
     void StopScanningForDevices();
     void ConnectTo(string address);
     void DisconnectDevice();

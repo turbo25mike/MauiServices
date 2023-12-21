@@ -20,7 +20,7 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public void DisconnectDevice() => throw new NotImplementedException();
 
-    public Task<bool> StartScanningForDevices(string[] uuids) => throw new NotImplementedException();
+    public Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null) => throw new NotImplementedException();
 
     public void StopScanningForDevices() => throw new NotImplementedException();
 

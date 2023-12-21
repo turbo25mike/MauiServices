@@ -64,7 +64,7 @@ public partial class BLEAdapter : IBluetoothAdapter
         }
     }
 
-    public Task<bool> StartScanningForDevices(string[]? uuids = null)
+    public Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {
         if (IsScanning) return Task.FromResult(true);
 

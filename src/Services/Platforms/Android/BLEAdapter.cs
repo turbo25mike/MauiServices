@@ -23,10 +23,15 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
     /// <summary>
     /// Starts BLE scanning if it is not currently running.
     /// </summary>
-    public async Task<bool> StartScanningForDevices(string[]? uuids = null)
+    /// <param name="uuids">Service IDs for devices.  Null searches for all devices but doesn't work in the app goes into the background.</param>
+    /// <param name="manufacturerID">Required in Android to gather manufacturer data.</param>
+    /// <returns></returns>
+    public async Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {
         try
         {
+            _ManufacturerID = manufacturerID;
+
             if (_Adapter?.BluetoothLeScanner is null) return false;
 
             if (IsScanning) return true;
@@ -105,7 +110,6 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
                 var sd = result.ScanRecord?.GetServiceData(ParcelUuid.FromString(uuid.ToString()));
                 if (sd != null)
                 {
-                    if (sd.Length != 19 || sd[0] != 0) return;
                     sdData.AddRange(sd);
                     break;
                 }

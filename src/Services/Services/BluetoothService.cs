@@ -4,7 +4,7 @@ public interface IBluetoothService
 {
     IConnectedDevice ConnectedDevice { get; }
     void Stop();
-    void Scan(string[] uuids = null);
+    void Scan(string[] uuids = null, int? manufacturerID = null);
     void ConnectTo(string deviceID);
     Task SetNotifications(string service, string characteristic);
     Task<int> RequestMTU(int size);
@@ -42,9 +42,9 @@ public class BluetoothService : IBluetoothService
     /// </summary>
     public void Stop() => _Adapter.StopScanningForDevices();
 
-    public void Scan(string[] uuids = null)
+    public void Scan(string[] uuids = null, int? manufacturerID = null)
     {
-        _Adapter.StartScanningForDevices(uuids);
+        _Adapter.StartScanningForDevices(uuids, manufacturerID);
 
         if (!_Adapter.IsScanning)
             Stopped?.Invoke(this, new());
