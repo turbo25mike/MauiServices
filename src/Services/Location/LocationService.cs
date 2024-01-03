@@ -39,6 +39,7 @@ public class LocationService : ILocationService
     {
         if (_InProgress || FilterType == LocationFilterType.STATIC) return;
 
+        _InProgress = true;
         _Filter = (filterType == LocationFilterType.AVERAGE) ? new KalmanFilter() : new LocationAccuracyFilter();
         Current = new Location();
 
