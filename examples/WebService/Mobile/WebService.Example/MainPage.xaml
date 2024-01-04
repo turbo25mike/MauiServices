@@ -36,6 +36,7 @@
         <VerticalStackLayout Grid.Row="2" Spacing="5">
         <Button Text="Assemble" Command="{Binding GetDataCommand}" HorizontalOptions="Fill" />
         <Button Text="Add Member" Command="{Binding GetDataCommand}" HorizontalOptions="Fill" />
+        <Button Text="Login" Command="{Binding LoginCommand}" HorizontalOptions="Fill" />
         </VerticalStackLayout>
     </Grid>
 

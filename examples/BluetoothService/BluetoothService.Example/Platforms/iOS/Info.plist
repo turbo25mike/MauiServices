@@ -34,7 +34,7 @@
 	<string>Leupold Control requires Bluetooth usage to connect to your Leupold products.</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Leupold Control requires Bluetooth usage to connect to your Leupold products.</string>
-<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Leupold Control requires Location usage to create pins within our mapping partner apps.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
 	<array>
@@ -42,6 +42,10 @@
 			<key>TemporaryFullAccuracyUsageDescription</key>
 			<string>Leupold Control requires your precise location to create pins within our mapping partner apps accurate to your current location.  We do not store your location within Leupold Control.</string>
 		</dict>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>bluetooth-central</string>
 	</array>
 </dict>
 </plist>

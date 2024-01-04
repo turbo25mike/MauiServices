@@ -10,13 +10,25 @@ namespace WebService.Example;
 
 public partial class MainViewModel : ObservableObject
 {
+    private readonly IAuth0Service _Auth0Service;
     private readonly IWebService _WebService;
 
-    public MainViewModel(IWebService webService, IKeyService keyService)
+    public MainViewModel(IWebService webService, IKeyService keyService, IAuth0Service auth)
     {
+        _Auth0Service = auth;
         _WebService = webService;
         keyService.SetEnvironment(KeyService.DefaultEnvironments.DEBUG);
         keyService.AddKey("API_KEY", ApiKey);
+    }
+
+    [RelayCommand]
+    private async Task Login()
+    {
+        var result = await _Auth0Service.Login();
+        if (!result.IsError)
+        {
+            _WebService.AddAuthorization(result.AccessToken);
+        }
     }
 
     [RelayCommand]

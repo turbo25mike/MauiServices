@@ -7,7 +7,7 @@ public static class ConfigExt
 #if ANDROID
     private static Platforms.Android.BLEBroadcastReceiver rec;
 #endif
-    public static MauiAppBuilder UseTurboMauiServices(this MauiAppBuilder builder)
+    public static MauiAppBuilder UseTurboMauiServices(this MauiAppBuilder builder, Auth0Service.Options options = null)
     {
         builder.Services.AddSingleton<IKeyService, KeyService>();
         builder.Services.AddSingleton<IBluetoothAdapter, BLEAdapter>();
@@ -17,6 +17,7 @@ public static class ConfigExt
         builder.Services.AddSingleton<IWebService, WebService>();
         builder.Services.AddSingleton<IFileService, FileService>();
         builder.Services.AddSingleton<IAlertService, AlertService>();
+        builder.Services.AddSingleton<IAuth0Service>(new Auth0Service(options));
 
 #if ANDROID
         builder.ConfigureLifecycleEvents(events =>

@@ -1,4 +1,5 @@
 ﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Turbo.Maui.Services;
@@ -82,6 +83,7 @@ public partial class MainViewModel : ObservableObject
 
     private void PacketDiscovered(object? sender, EventDataArgs<Packet> e)
     {
+        Debug.WriteLine($"Packet Discovered Name: {e.Data.Name} {DateTime.Now.ToLongTimeString()}");
         if (string.IsNullOrEmpty(e.Data.Name)) return;
         var found = FoundDevices.FirstOrDefault(x => x.ID == e.Data.ID);
         if (found == null)

@@ -17,7 +17,7 @@
 		<AssemblyName>Services</AssemblyName>
 		<PackageId>Turbo.Maui.Services</PackageId>
 		<PackageReadmeFile>ReadMe.md</PackageReadmeFile>
-		<VersionPrefix>8.1.4</VersionPrefix>
+		<VersionPrefix>8.2.0</VersionPrefix>
 		<Authors>Jeff Johnson</Authors>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
@@ -63,5 +63,6 @@
 		<PackageReference Include="SQLitePCLRaw.bundle_green" Version="2.1.7" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 		<PackageReference Include="System.IO.Hashing" Version="8.0.0" />
+		<PackageReference Include="IdentityModel.OidcClient" Version="5.2.1" />
 	</ItemGroup>
 </Project>

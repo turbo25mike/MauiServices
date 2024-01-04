@@ -11,7 +11,13 @@ public static class MauiProgram
         var builder = MauiApp.CreateBuilder();
         builder
             .UseMauiApp<App>()
-            .UseTurboMauiServices()
+            .UseTurboMauiServices(options: new()
+            {
+                Domain = "dev-sj-bt0nv.us.auth0.com",
+                ClientID = "myBjdZ44o3dzavc4UmCvM1Cky32MJ2xc",
+                RedirectUri = "sample://callback",
+                API_Audience = "https://sample.limelite.tech"
+            })
             .UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
             {
