@@ -1,10 +1,8 @@
 ﻿using System.Collections.ObjectModel;
-using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Turbo.Maui.Services;
 using Turbo.Maui.Services.Examples.Shared.Models;
-using Turbo.Maui.Services.Models;
 
 namespace WebService.Example;
 
@@ -35,8 +33,8 @@ public partial class MainViewModel : ObservableObject
     private async Task TryUriWithAuth()
     {
         _WebService.AddAuthorization("Test4");
-        var response = await _WebService.Get<IEnumerable<string>>(new Uri("https://tak.limelite.tech/ManageGeoObject/getGeoObject"));
-
+        //var response = await _WebService.Get<IEnumerable<string>>(new Uri("https://tak.limelite.tech/ManageGeoObject/getGeoObject"));
+        //var response = await _WebService.Post(new Uri("https://tak.limelite.tech/ManageGeoObject/getGeoObject"), new object());
     }
 
     [RelayCommand]

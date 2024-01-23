@@ -15,6 +15,7 @@ public interface IWebService
     Task<byte[]> GetFile(string route);
     Task<HttpResponseData<long>> GetFileSize(string url);
     Task<HttpResponseData<DateTime>> GetDateLastModified(string route);
+    Task<HttpResponse> Post(Uri route, object obj);
     Task<HttpResponse> Post(string route, object obj);
     Task<HttpResponse> Delete(string route);
     Task<HttpResponse> Put(string route, PatchDocument patch);
