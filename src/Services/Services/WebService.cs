@@ -81,6 +81,8 @@ public class WebService : IWebService
 
     public async Task<HttpResponse> Put(string route, PatchDocument patch) => await Call(async () => await _Client.PutAsync(GetUri(route), GetJsonPatchContent(patch)));
 
+    public async Task<HttpResponse> Post(Uri route, object obj) => await Call(async () => await _Client.PostAsync(route, GetJsonContent(obj)));
+
     public async Task<HttpResponse> Post(string route, object obj) => await Call(async () => await _Client.PostAsync(GetUri(route), GetJsonContent(obj)));
 
     public async Task<HttpResponse> Delete(string route) => await Call(async () => await _Client.DeleteAsync(GetUri(route)));

@@ -32,6 +32,14 @@ public partial class MainViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task TryUriWithAuth()
+    {
+        _WebService.AddAuthorization("Test4");
+        var response = await _WebService.Get<IEnumerable<string>>(new Uri("https://tak.limelite.tech/ManageGeoObject/getGeoObject"));
+
+    }
+
+    [RelayCommand]
     private async Task GetData()
     {
         Heading = "Fetching Data";

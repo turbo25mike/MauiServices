@@ -1,9 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Turbo.Maui.Services.Examples.API;
-using Turbo.Maui.Services.Examples.API.Utilities;
 
 var builder = WebApplication.CreateBuilder(args);
 var domain = $"https://{builder.Configuration["Auth0:Domain"]}/";

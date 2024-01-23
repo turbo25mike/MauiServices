@@ -37,6 +37,7 @@
         <Button Text="Assemble" Command="{Binding GetDataCommand}" HorizontalOptions="Fill" />
         <Button Text="Add Member" Command="{Binding GetDataCommand}" HorizontalOptions="Fill" />
         <Button Text="Login" Command="{Binding LoginCommand}" HorizontalOptions="Fill" />
+        <Button Text="Try Uri with Auth" Command="{Binding TryUriWithAuthCommand}" HorizontalOptions="Fill" />
         </VerticalStackLayout>
     </Grid>
 

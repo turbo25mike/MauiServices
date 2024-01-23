@@ -63,4 +63,10 @@
 		<ProjectReference Include="..\..\..\..\src\Services\Turbo.Maui.Services.csproj" />
 		<ProjectReference Include="..\..\API\Example.Shared.Models\Example.Shared.Models.csproj" />
 	</ItemGroup>
+	<ItemGroup>
+	  <None Remove="Platforms\Android\Resources\xml\" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Platforms\Android\Resources\xml\" />
+	</ItemGroup>
 </Project>
