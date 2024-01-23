@@ -8,13 +8,20 @@ public interface IAuth0Service
 {
     IdentityModel.OidcClient.Browser.IBrowser Browser { get; }
     Task<LoginResult> Login();
+    void Update(Auth0Service.Options options);
 }
 
 public class Auth0Service : IAuth0Service
 {
     public Auth0Service(Options options)
     {
-        oidcClient = new OidcClient(new OidcClientOptions
+        Update(options);
+    }
+
+    public void Update(Options options)
+    {
+        if (options is null) return;
+        _OidcClient = new OidcClient(new OidcClientOptions
         {
             Authority = $"https://{options.Domain}",
             ClientId = options.ClientID,
@@ -27,8 +34,8 @@ public class Auth0Service : IAuth0Service
 
     public IdentityModel.OidcClient.Browser.IBrowser Browser
     {
-        get => oidcClient.Options.Browser;
-        private set => oidcClient.Options.Browser = value;
+        get => _OidcClient.Options.Browser;
+        private set => _OidcClient.Options.Browser = value;
     }
 
     public async Task<LoginResult> Login()
@@ -46,28 +53,28 @@ public class Auth0Service : IAuth0Service
                 })
             };
         }
-        return await oidcClient.LoginAsync(loginRequest);
+        return await _OidcClient.LoginAsync(loginRequest);
     }
 
     public async Task<BrowserResult> LogoutAsync()
     {
         var logoutRequest = new LogoutRequest();
-        var endSessionUrl = new RequestUrl($"{oidcClient.Options.Authority}/v2/logout")
+        var endSessionUrl = new RequestUrl($"{_OidcClient.Options.Authority}/v2/logout")
           .Create(new Parameters(new Dictionary<string, string>
         {
-          {"client_id", oidcClient.Options.ClientId },
-          {"returnTo", oidcClient.Options.RedirectUri }
+          {"client_id", _OidcClient.Options.ClientId },
+          {"returnTo", _OidcClient.Options.RedirectUri }
         }));
-        var browserOptions = new BrowserOptions(endSessionUrl, oidcClient.Options.RedirectUri)
+        var browserOptions = new BrowserOptions(endSessionUrl, _OidcClient.Options.RedirectUri)
         {
             Timeout = TimeSpan.FromSeconds(logoutRequest.BrowserTimeout),
             DisplayMode = logoutRequest.BrowserDisplayMode
         };
 
-        return await oidcClient.Options.Browser.InvokeAsync(browserOptions);
+        return await _OidcClient.Options.Browser.InvokeAsync(browserOptions);
     }
 
-    private readonly OidcClient oidcClient;
+    private OidcClient _OidcClient;
     private string _APIaudience;
 
     public class Options

@@ -5,8 +5,8 @@
 /// </summary>
 public partial class BLEAdapter : IBluetoothAdapter
 {
-#if IOS
-#elif ANDROID
+#if __IOS__
+#elif __ANDROID__
 #else
     public IConnectedDevice ConnectedDevice => throw new NotImplementedException();
 

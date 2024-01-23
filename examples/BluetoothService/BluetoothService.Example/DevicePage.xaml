@@ -3,14 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="BluetoothService.Example.DevicePage"
              xmlns:viewmodel="clr-namespace:BluetoothService.Example"
-             xmlns:models="clr-namespace:Turbo.Maui.Services.Models;assembly=Turbo.Maui.Services"
+             
              Title="{Binding SelectedDevice.Name}"
              x:DataType="viewmodel:DeviceViewModel">
     <VerticalStackLayout Margin="10">
         <Label Text="{Binding ConnectionStatus}" HorizontalOptions="Center" />
         <Label Text="Services" />
         <ScrollView>
-            <VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding Services}">
+            <!--<VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding Services}">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="models:BLEService">
                         <VerticalStackLayout>
@@ -31,7 +31,7 @@
                         </VerticalStackLayout>
                     </DataTemplate>
                 </BindableLayout.ItemTemplate>
-            </VerticalStackLayout>
+            </VerticalStackLayout>-->
         </ScrollView>
     </VerticalStackLayout>
 </ContentPage>
