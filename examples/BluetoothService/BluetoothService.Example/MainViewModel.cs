@@ -84,12 +84,21 @@ public partial class MainViewModel : ObservableObject
     private void PacketDiscovered(object? sender, EventDataArgs<Packet> e)
     {
         Debug.WriteLine($"Packet Discovered Name: {e.Data.Name} {DateTime.Now.ToLongTimeString()}");
-        if (string.IsNullOrEmpty(e.Data.Name)) return;
+        
         var found = FoundDevices.FirstOrDefault(x => x.ID == e.Data.ID);
         if (found == null)
-            FoundDevices.Add(new(e.Data));
+        {
+            var pE = new PacketExt(e.Data);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                FoundDevices.Add(pE);
+            });
+        }
         else
-            found.Update(e.Data);
+            MainThread.BeginInvokeOnMainThread(() =>
+            {
+                found.Update(e.Data);
+            });
     }
 
 
@@ -123,7 +132,10 @@ public partial class PacketExt : Packet
     {
         LastSeen = DateTime.Now;
         RSSI = p.RSSI;
-        Name = p.Name;
+        if (!string.IsNullOrWhiteSpace(p.Name) && (Name == "- No Name -" || string.IsNullOrWhiteSpace(Name)))
+            Name = p.Name;
+        else if(string.IsNullOrWhiteSpace(Name))
+            Name = "- No Name -";
         TxPower = p.TxPower;
         ManufacturerData = p.ManufacturerData;
         ServiceData = p.ServiceData;
