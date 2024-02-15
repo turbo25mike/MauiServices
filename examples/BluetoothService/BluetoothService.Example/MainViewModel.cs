@@ -84,7 +84,7 @@ public partial class MainViewModel : ObservableObject
     private void PacketDiscovered(object? sender, EventDataArgs<Packet> e)
     {
         Debug.WriteLine($"Packet Discovered Name: {e.Data.Name} {DateTime.Now.ToLongTimeString()}");
-        
+
         var found = FoundDevices.FirstOrDefault(x => x.ID == e.Data.ID);
         if (found == null)
         {
@@ -134,13 +134,20 @@ public partial class PacketExt : Packet
         RSSI = p.RSSI;
         if (!string.IsNullOrWhiteSpace(p.Name) && (Name == "- No Name -" || string.IsNullOrWhiteSpace(Name)))
             Name = p.Name;
-        else if(string.IsNullOrWhiteSpace(Name))
+        else if (string.IsNullOrWhiteSpace(Name))
             Name = "- No Name -";
         TxPower = p.TxPower;
-        ManufacturerData = p.ManufacturerData;
-        ServiceData = p.ServiceData;
-        ManufacturerDataString = GetString(p.ManufacturerData);
-        ServiceDataString = GetString(p.ServiceData);
+        if (p.ManufacturerData != null && p.ManufacturerData.Length > 0)
+        {
+            ManufacturerData = p.ManufacturerData;
+            ManufacturerDataString = GetString(p.ManufacturerData);
+        }
+
+        if (p.ServiceData != null && p.ServiceData.Length > 0)
+        {
+            ServiceData = p.ServiceData;
+            ServiceDataString = GetString(p.ServiceData);
+        }
     }
 
     private string GetString(byte[] bytes) => bytes == null ? "" : $"{string.Join(", ", bytes)}";

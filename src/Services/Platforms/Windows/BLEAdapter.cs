@@ -38,12 +38,9 @@ public partial class BLEAdapter : IBluetoothAdapter
         //this appears to not be working as a filter so we will filter when devices are found.
         //if (_PeripheralUUIDs.Any())
         //{
-        //{
         //    //adds filter to native scanner if serviceUuids are specified
         //    foreach (var uuid in _PeripheralUUIDs)
-        //    {
         //        _BleWatcher.AdvertisementFilter.Advertisement.ServiceUuids.Add(uuid);
-        //    }
 
         //    Debug.WriteLine($"ScanFilters: {string.Join(", ", _PeripheralUUIDs)}");
         //}
@@ -146,7 +143,7 @@ public partial class BLEAdapter : IBluetoothAdapter
         //    foreach (var uuid in _PeripheralUUIDs)
         //        if (btAdv.Advertisement.ServiceUuids.Contains(uuid))
         //        {
-        //            containsAny = true; 
+        //            containsAny = true;
         //            break;
         //        }
         //    if (!containsAny) return;
