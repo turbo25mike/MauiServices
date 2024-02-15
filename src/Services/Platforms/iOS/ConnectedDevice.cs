@@ -50,7 +50,7 @@ public class ConnectedDevice : IConnectedDevice
                 }
                 Console.WriteLine($"ConnectedDevice: Characteristic(s) {serviceCharFound} Found");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
             }
         };

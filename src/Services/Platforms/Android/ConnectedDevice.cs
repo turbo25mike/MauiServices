@@ -27,15 +27,15 @@ public class ConnectedDevice : IConnectedDevice
     public Task<nuint> RequestMTU(int size)
     {
         _GetMtuTask = new TaskCompletionSource<nuint>();
-        _GattCallback.MtuChanged += _GattCallback_MTUChanged;
+        _GattCallback.MtuChanged += GattCallback_MTUChanged;
         _Gatt.RequestMtu(size);
         return _GetMtuTask.Task;
     }
 
-    private void _GattCallback_MTUChanged(object? sender, EventDataArgs<nuint> e)
+    private void GattCallback_MTUChanged(object? sender, EventDataArgs<nuint> e)
     {
         MTU = e.Data;
-        _GattCallback.MtuChanged -= _GattCallback_MTUChanged;
+        _GattCallback.MtuChanged -= GattCallback_MTUChanged;
         _GetMtuTask?.TrySetResult(e.Data);
     }
 

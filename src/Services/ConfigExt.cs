@@ -1,11 +1,11 @@
 ﻿using Microsoft.Maui.LifecycleEvents;
-
+using Turbo.Maui.Services.Platforms;
 namespace Turbo.Maui.Services;
 
 public static class ConfigExt
 {
 #if ANDROID
-    private static Platforms.Android.BLEBroadcastReceiver rec;
+    private static BLEBroadcastReceiver rec;
 #endif
     public static MauiAppBuilder UseTurboMauiServices(this MauiAppBuilder builder, Auth0Service.Options options = null)
     {
@@ -23,9 +23,9 @@ public static class ConfigExt
         builder.ConfigureLifecycleEvents(events =>
          {
              events.AddAndroid(android => android
-                 .OnCreate((activity, bundle) => rec = new Platforms.Android.BLEBroadcastReceiver())
-                 .OnResume((activity) => Platforms.Android.BroadcastReceiverUtil.Register(rec, activity, new Android.Content.IntentFilter(Android.Bluetooth.BluetoothAdapter.ActionStateChanged)))
-                 .OnStop((activity) => Platforms.Android.BroadcastReceiverUtil.Unregister(rec, activity))
+                 .OnCreate((activity, bundle) => rec = new BLEBroadcastReceiver())
+                 .OnResume((activity) => BroadcastReceiverUtil.Register(rec, activity, new Android.Content.IntentFilter(Android.Bluetooth.BluetoothAdapter.ActionStateChanged)))
+                 .OnStop((activity) => BroadcastReceiverUtil.Unregister(rec, activity))
              );
          });
 #endif

@@ -2,7 +2,7 @@
 using Android.Bluetooth;
 using Android.Content;
 
-namespace Turbo.Maui.Services.Platforms.Android;
+namespace Turbo.Maui.Services.Platforms;
 
 public static class BroadcastReceiverUtil
 {
