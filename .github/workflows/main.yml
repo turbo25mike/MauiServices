@@ -26,6 +26,7 @@ jobs:
         run: |  
           cd src/Services
           dotnet workload install maui
+          dotnet workload install maui-windows
           dotnet pack -c Release -o out  
 
       - name: Push generated package to Nuget registry
