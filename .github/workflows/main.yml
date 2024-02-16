@@ -28,4 +28,5 @@ jobs:
           dotnet workload install maui
           dotnet workload install maui-windows
           dotnet pack -c Release -o out
-          dotnet nuget push out/*.nupkg --api-key ${{secrets.NUGET_TOKEN}} --source https://api.nuget.org/v3/index.json
+          cd out
+          dotnet nuget push *.nupkg --api-key ${{secrets.NUGET_TOKEN}} --source https://api.nuget.org/v3/index.json
