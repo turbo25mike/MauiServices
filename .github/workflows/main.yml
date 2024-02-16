@@ -22,12 +22,10 @@ jobs:
         with:
           dotnet-version: 8.0.x
           
-      - name: Build solution and generate NuGet package
+      - name: Build solution and generate NuGet package and Push
         run: |  
           cd src/Services
           dotnet workload install maui
           dotnet workload install maui-windows
-          dotnet pack -c Release -o out  
-
-      - name: Push generated package to Nuget registry
-        run: dotnet nuget push ./src/Services/out/*.nupkg --api-key ${{secrets.NUGET_TOKEN}} --source https://api.nuget.org/v3/index.json
+          dotnet pack -c Release -o out
+	  dotnet nuget push ./out/*.nupkg --api-key ${{secrets.NUGET_TOKEN}} --source https://api.nuget.org/v3/index.json
