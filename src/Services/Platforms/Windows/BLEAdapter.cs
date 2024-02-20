@@ -4,6 +4,8 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Radios;
+using Microsoft.Maui.Controls;
+using System;
 
 namespace Turbo.Maui.Services.Platforms;
 
@@ -93,7 +95,17 @@ public partial class BLEAdapter : IBluetoothAdapter
         }
         else
         {
-            ConnectedDevice = new ConnectedDevice(address, d, _GattSession);
+            //Let's fetch the services/characteristics
+            var services = new Dictionary<GattDeviceService, IEnumerable<GattCharacteristic>>();
+            var result = await d.GetGattServicesAsync(BluetoothCacheMode.Cached);
+            foreach (var s in result.Services)
+            {
+                var ch = await s.GetCharacteristicsAsync(BluetoothCacheMode.Cached);
+                services.Add(s, ch.Characteristics);
+            }
+
+            ConnectedDevice = new ConnectedDevice(address, d, _GattSession, services);
+
             DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
         }
     }

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Linq;
 using CoreBluetooth;
 using Foundation;
 

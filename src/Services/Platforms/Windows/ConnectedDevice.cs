@@ -7,8 +7,9 @@ namespace Turbo.Maui.Services.Platforms;
 
 public class ConnectedDevice : IConnectedDevice
 {
-    public ConnectedDevice(string address, BluetoothLEDevice device, GattSession gatt)
+    public ConnectedDevice(string address, BluetoothLEDevice device, GattSession gatt, Dictionary<GattDeviceService, IEnumerable<GattCharacteristic>> services)
     {
+        _Services = services;
         Address = address;
         _Device = device;
         _Gatt = gatt;
@@ -71,27 +72,25 @@ public class ConnectedDevice : IConnectedDevice
         await ch.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
     }
 
-    public IEnumerable<BLEService> GetServices()
-    {
-        return _Device.GattServices?
-            .Select(s => new BLEService(s.Uuid.ToString().ToUpper(), s.GetAllCharacteristics().Select(c => new BLECharacteristic(c.Uuid.ToString().ToUpper(), c.UserDescription)))) ?? new List<BLEService>();
-    }
+    public IEnumerable<BLEService> GetServices() =>
+        _Services.Select(s => new BLEService(s.Key.Uuid.ToString().ToUpper(), s.Value.Select(c => new BLECharacteristic(c.Uuid.ToString().ToUpper(), c.UserDescription))));
 
-    private GattDeviceService GetService(string uuid)
+    private KeyValuePair<GattDeviceService, IEnumerable<GattCharacteristic>>? GetService(string uuid) =>
+        _Services.FirstOrDefault(s => s.Key.Uuid.ToString().Equals(uuid, StringComparison.CurrentCultureIgnoreCase));
+    
+    private GattCharacteristic GetCharacteristic(string serviceID, string uuid)
     {
-        var s = _Device.GattServices?.FirstOrDefault(s => s.Uuid.ToString().Equals(uuid, StringComparison.CurrentCultureIgnoreCase));
-        return s is null ? throw new ArgumentNullException($"Service ({uuid}) not found.") : s;
+        var service = GetService(serviceID);
+        var ch = service?.Value.FirstOrDefault(s => s.Uuid.ToString().Equals(uuid, StringComparison.CurrentCultureIgnoreCase));
+        return ch;
     }
-    private static GattCharacteristic GetCharacteristic(GattDeviceService service, string uuid)
-    {
-        var ch = service.GetAllCharacteristics().FirstOrDefault(s => s.Uuid.ToString().Equals(uuid, StringComparison.CurrentCultureIgnoreCase));
-        return ch is null ? throw new ArgumentNullException($"Characteristic ({uuid}) not found.") : ch;
-    }
+        
+    private Dictionary<GattDeviceService, IEnumerable<GattCharacteristic>> _Services;
 
     public bool CanSendWriteWithoutResponse() => !_WriteInProgress;
     public bool CanSendWrite() => !_WriteInProgress;
     public bool HasService(string serviceID) => GetService(serviceID) != null;
-    public bool HasCharacteristic(string serviceID, string characteristicID) => GetCharacteristic(GetService(serviceID), characteristicID) != null;
+    public bool HasCharacteristic(string serviceID, string characteristicID) => GetCharacteristic(serviceID, characteristicID) != null;
 
     public bool GattReady { get; private set; }
     public bool CharacteristicsDiscovered { get; private set; }
