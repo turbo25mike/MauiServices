@@ -11,9 +11,9 @@ public partial class BLEAdapter : IBluetoothAdapter
 {
     public BLEAdapter()
     {
-        _Adapter =  BluetoothAdapter.GetDefaultAsync().AsTask().Result;
+        _Adapter = BluetoothAdapter.GetDefaultAsync().AsTask().Result;
         _Radio = _Adapter.GetRadioAsync().AsTask().Result;
-        _Radio.StateChanged += (s,e) => BluetoothStateChanged?.Invoke(this, new());
+        _Radio.StateChanged += (s, e) => BluetoothStateChanged?.Invoke(this, new());
     }
 
     private BluetoothAdapter _Adapter;
@@ -28,7 +28,7 @@ public partial class BLEAdapter : IBluetoothAdapter
     public Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {
         if (IsScanning) return Task.FromResult(true);
-        if(manufacturerID != null)
+        if (manufacturerID != null)
             _ManufacturerIDFilter = (ushort)manufacturerID;
         AddPeripherals(uuids);
 
@@ -64,7 +64,7 @@ public partial class BLEAdapter : IBluetoothAdapter
     public async void ConnectTo(string address)
     {
         Debug.WriteLine($"ConnectTo: {address}");
-               
+
 
         DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connecting));
         StopScanningForDevices();
@@ -82,7 +82,7 @@ public partial class BLEAdapter : IBluetoothAdapter
             DisposeGattSession();
         }
 
-        if (_GattSession != null)
+        if (_GattSession == null)
         {
             // use DisconnectDeviceNative to clean up resources otherwise windows won't disconnect the device
             // after a subsequent successful connection (#528, #536, #423)
@@ -171,7 +171,7 @@ public partial class BLEAdapter : IBluetoothAdapter
             RSSI = btAdv.RawSignalStrengthInDBm,
             ID = deviceId.ToString(),
             Name = btAdv.Advertisement.LocalName,
-            
+
         };
 
         //var adData = System.Text.Encoding.Default.GetString(advList[0].Data.ToArray());
