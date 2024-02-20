@@ -5,7 +5,7 @@ public interface IFileService
     Task<byte[]> ReadAllBytes(string fileName);
     Task<string> ReadAllText(string fileName);
     bool FileExists(string fileName);
-    void SaveFile(byte[] bytes, string fileName);
+    void SaveFile(byte[] bytes, string fileName, FileMode mode = FileMode.OpenOrCreate);
     void DeleteFile(string fileName);
     DateTime GetFileCreationTimeUtc(string fileName);
     IEnumerable<string> GetDirectories(string path);
@@ -24,7 +24,7 @@ public class FileService : IFileService
 
     public DateTime GetFileCreationTimeUtc(string fileName) => File.GetCreationTimeUtc(Path.Combine(FileSystem.Current.AppDataDirectory, fileName));
 
-    public void SaveFile(byte[] bytes, string fileName)
+    public void SaveFile(byte[] bytes, string fileName, FileMode mode = FileMode.OpenOrCreate)
     {
         var directory = fileName[..(fileName.LastIndexOf('/') + 1)];
         var file = fileName[(fileName.LastIndexOf('/') + 1)..];
@@ -32,7 +32,7 @@ public class FileService : IFileService
 
         Directory.CreateDirectory(filePath);
 
-        using var fileStream = new FileStream(Path.Combine(filePath, file), FileMode.Create);
+        using var fileStream = new FileStream(Path.Combine(filePath, file), mode);
         for (var i = 0; i < bytes.Length; i++)
             fileStream.WriteByte(bytes[i]);
 
