@@ -7,10 +7,9 @@ namespace Turbo.Maui.Services.Platforms;
 
 public class ConnectedDevice : IConnectedDevice
 {
-    public ConnectedDevice(string address, BluetoothLEDevice device, GattSession gatt, Dictionary<GattDeviceService, IEnumerable<GattCharacteristic>> services)
+    public ConnectedDevice(BluetoothLEDevice device, GattSession gatt, Dictionary<GattDeviceService, IEnumerable<GattCharacteristic>> services)
     {
         _Services = services;
-        Address = address;
         _Device = device;
         _Gatt = gatt;
         _Gatt.MaxPduSizeChanged += Gatt_MaxPduSizeChanged;
@@ -43,18 +42,24 @@ public class ConnectedDevice : IConnectedDevice
 
     public async void Read(string serviceID, string characteristicID, Action<KeyValuePair<string, byte[]?>> action, bool notify)
     {
-        var deviceId = BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString();
-        var ch = GetCharacteristic(serviceID, characteristicID);
-        
-        if (notify)
+        try
         {
-            ch.ValueChanged += (s, e) => action.Invoke(new KeyValuePair<string, byte[]?>(deviceId, e.CharacteristicValue?.ToArray()));
-            await ch.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
-        }
-        else
+            var deviceId = BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString();
+            var ch = GetCharacteristic(serviceID, characteristicID);
+
+            if (notify)
+            {
+                ch.ValueChanged += (s, e) => action.Invoke(new KeyValuePair<string, byte[]?>(deviceId, e.CharacteristicValue?.ToArray()));
+                var result = await ch.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
+            }
+            else
+            {
+                var readResult = await ch.ReadValueAsync(BluetoothCacheMode.Uncached);
+                action.Invoke(new KeyValuePair<string, byte[]?>(_Device.DeviceId, readResult.Value?.ToArray()));
+            }
+        }catch(Exception ex)
         {
-            var readResult = await ch.ReadValueAsync(BluetoothCacheMode.Uncached);
-            action.Invoke(new KeyValuePair<string, byte[]?>(_Device.DeviceId, readResult.Value?.ToArray()));
+
         }
     }
 
@@ -97,7 +102,7 @@ public class ConnectedDevice : IConnectedDevice
 
     public bool GattReady { get; private set; }
     public bool CharacteristicsDiscovered { get; private set; }
-    public string Address { get; private set; }
+    public string Address { get => BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString(); }
 
     public nuint MTU { get; private set; }
     public event EventHandler<EventDataArgs<string[]>>? ServicesDiscovered = delegate { };

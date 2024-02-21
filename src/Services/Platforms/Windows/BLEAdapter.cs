@@ -4,6 +4,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Radios;
+using System.Net;
 
 namespace Turbo.Maui.Services.Platforms;
 
@@ -93,19 +94,33 @@ public partial class BLEAdapter : IBluetoothAdapter
         }
         else
         {
-            //Let's fetch the services/characteristics
-            var services = new Dictionary<GattDeviceService, IEnumerable<GattCharacteristic>>();
-            var result = await d.GetGattServicesAsync(BluetoothCacheMode.Cached);
-            foreach (var s in result.Services)
-            {
-                var ch = await s.GetCharacteristicsAsync(BluetoothCacheMode.Cached);
-                services.Add(s, ch.Characteristics);
-            }
-
-            ConnectedDevice = new ConnectedDevice(address, d, _GattSession, services);
-
-            DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
+            if (d.ConnectionStatus == BluetoothConnectionStatus.Connected) GetServices(d);
+            else
+                d.ConnectionStatusChanged += ConnectionStatusChanged; 
+            
         }
+    }
+
+    private void ConnectionStatusChanged(BluetoothLEDevice sender, object args)
+    {
+        Debug.WriteLine("ConnectionStatusChanged: " + sender.ConnectionStatus);
+        if (sender.ConnectionStatus == BluetoothConnectionStatus.Connected) GetServices(sender);
+    }
+
+    private async void GetServices(BluetoothLEDevice d)
+    {
+        //Let's fetch the services/characteristics
+        var services = new Dictionary<GattDeviceService, IEnumerable<GattCharacteristic>>();
+        var result = await d.GetGattServicesAsync(BluetoothCacheMode.Cached);
+        foreach (var s in result.Services)
+        {
+            var ch = await s.GetCharacteristicsAsync(BluetoothCacheMode.Cached);
+            services.Add(s, ch.Characteristics);
+        }
+
+        ConnectedDevice = new ConnectedDevice(d, _GattSession, services);
+
+        DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
     }
 
     private void DisposeGattSession()
