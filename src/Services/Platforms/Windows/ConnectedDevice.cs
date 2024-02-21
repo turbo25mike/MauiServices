@@ -29,11 +29,12 @@ public class ConnectedDevice : IConnectedDevice
         return Task.FromResult(MTU);
     }
 
+
     private void Gatt_MaxPduSizeChanged(object? sender, object e) => MTU = _Gatt.MaxPduSize;
 
     public async void Write(string serviceID, string characteristicID, byte[] val, bool withResponse = true)
     {
-        var ch = GetCharacteristic(GetService(serviceID), characteristicID);
+        var ch = GetCharacteristic(serviceID, characteristicID);
 
         _WriteInProgress = true;
         var writeType = withResponse ? GattWriteOption.WriteWithResponse : GattWriteOption.WriteWithoutResponse;
@@ -42,10 +43,12 @@ public class ConnectedDevice : IConnectedDevice
 
     public async void Read(string serviceID, string characteristicID, Action<KeyValuePair<string, byte[]?>> action, bool notify)
     {
-        var ch = GetCharacteristic(GetService(serviceID), characteristicID);
+        var deviceId = BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString();
+        var ch = GetCharacteristic(serviceID, characteristicID);
+        
         if (notify)
         {
-            ch.ValueChanged += (s, e) => action.Invoke(new KeyValuePair<string, byte[]?>(_Device.DeviceId, e.CharacteristicValue?.ToArray()));
+            ch.ValueChanged += (s, e) => action.Invoke(new KeyValuePair<string, byte[]?>(deviceId, e.CharacteristicValue?.ToArray()));
             await ch.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
         }
         else
@@ -67,7 +70,7 @@ public class ConnectedDevice : IConnectedDevice
 
     public async void StopNotifying(string serviceID, string characteristicID)
     {
-        var ch = GetCharacteristic(GetService(serviceID), characteristicID);
+        var ch = GetCharacteristic(serviceID, characteristicID);
         if (ch is null) return;
         await ch.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
     }

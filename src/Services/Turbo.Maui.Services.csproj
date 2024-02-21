@@ -54,7 +54,6 @@
 		<Folder Include="Location\" />
 		<Folder Include="Models\" />
 		<Folder Include="Utilities\" />
-		<Folder Include="Platforms\" />
 		<Folder Include="Platforms\Android\" />
 		<Folder Include="Platforms\iOS\" />
 		<Folder Include="Services\" />

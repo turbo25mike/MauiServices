@@ -4,8 +4,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Devices.Radios;
-using Microsoft.Maui.Controls;
-using System;
 
 namespace Turbo.Maui.Services.Platforms;
 
@@ -147,7 +145,7 @@ public partial class BLEAdapter : IBluetoothAdapter
     /// <param name="btAdv">The advertisement recieved by the watcher</param>
     private void OnScanResult(BluetoothLEAdvertisementWatcher watcher, BluetoothLEAdvertisementReceivedEventArgs btAdv)
     {
-        var deviceId = ParseDeviceId(btAdv.BluetoothAddress);
+        var deviceId = BLEUtils.ParseDeviceId(btAdv.BluetoothAddress);
 
         //if (_PeripheralUUIDs.Any())
         //{
@@ -200,24 +198,7 @@ public partial class BLEAdapter : IBluetoothAdapter
         DeviceDiscovered?.Invoke(this, new(packet));
     }
 
-    /// <summary>
-    /// Method to parse the bluetooth address as a hex string to a UUID
-    /// </summary>
-    /// <param name="bluetoothAddress">BluetoothLEDevice native device address</param>
-    /// <returns>a GUID that is padded left with 0 and the last 6 bytes are the bluetooth address</returns>
-    private static Guid ParseDeviceId(ulong bluetoothAddress)
-    {
-        var macWithoutColons = bluetoothAddress.ToString("x");
-        macWithoutColons = macWithoutColons.PadLeft(12, '0'); //ensure valid length
-        var deviceGuid = new byte[16];
-        Array.Clear(deviceGuid, 0, 16);
-        var macBytes = Enumerable.Range(0, macWithoutColons.Length)
-            .Where(x => x % 2 == 0)
-            .Select(x => Convert.ToByte(macWithoutColons.Substring(x, 2), 16))
-            .ToArray();
-        macBytes.CopyTo(deviceGuid, 10);
-        return new Guid(deviceGuid);
-    }
+    
 
     Dictionary<Guid, BluetoothLEDevice> _DevicesFound = new();
 
