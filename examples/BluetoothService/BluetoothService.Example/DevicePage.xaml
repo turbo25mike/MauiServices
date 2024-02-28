@@ -7,8 +7,8 @@
              Title="{Binding SelectedDevice.Name}"
              x:DataType="viewmodel:DeviceViewModel">
     <VerticalStackLayout Margin="10">
-        <Label Text="{Binding ConnectionStatus}" HorizontalOptions="Center" />
         <Label Text="Services" />
+        <Button Text="Disconnect" Command="{Binding DisconnectCommand}" />
         <ScrollView>
             <!--<VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding Services}">
                 <BindableLayout.ItemTemplate>

@@ -24,12 +24,8 @@ public partial class BLEAdapter : IBluetoothAdapter
 
         _Adapter.DisconnectedPeripheral += (s, e) =>
         {
-
             Debug.WriteLine("BLE Disconnected");
-            _ConnectedPeripheral?.Dispose();
-            _ConnectedPeripheral = null;
-            ConnectedDevice = null;
-            DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Disconnected));
+            DisposeConnectedDevice();
         };
     }
 
@@ -41,9 +37,27 @@ public partial class BLEAdapter : IBluetoothAdapter
             StartScanningForDevices();
         else if (_Adapter.State == CBManagerState.PoweredOff)
         {
+            _DevicesFound.Clear();
             var wasRunning = _IsRunning;
             StopScanningForDevices();
             _IsRunning = wasRunning;
+            DisposeConnectedDevice();
+        }
+    }
+
+    void DisposeConnectedDevice()
+    {
+        Debug.WriteLine("BLE Adapter: Disposing Connected Device");
+        if (_ConnectedPeripheral != null)
+        {
+            _ConnectedPeripheral?.Dispose();
+            _ConnectedPeripheral = null;
+        }
+        if (ConnectedDevice != null)
+        {
+            ConnectedDevice.Dispose();
+            ConnectedDevice = null;
+            DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Disconnected));
         }
     }
 
@@ -81,7 +95,6 @@ public partial class BLEAdapter : IBluetoothAdapter
             IsScanning = true;
 #if __UNIFIED__
             var options = new PeripheralScanningOptions { AllowDuplicatesKey = true };
-
 
             _Adapter.ScanForPeripherals(_PeripheralUUIDs.ToArray(), options);
             //_Adapter.ScanForPeripherals(null, options); //Does not work in background
@@ -130,7 +143,7 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public void DisconnectDevice()
     {
-        if (_ConnectedPeripheral == null) return;
+        DisposeConnectedDevice();
         _Adapter.CancelPeripheralConnection(_ConnectedPeripheral);
     }
 

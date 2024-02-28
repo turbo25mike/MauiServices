@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.Text;
 using System.Diagnostics;
 using BluetoothService.Example.Utilities;
+using CommunityToolkit.Mvvm.Input;
 
 namespace BluetoothService.Example;
 
@@ -17,21 +18,26 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
         _BluetoothService.DeviceMessageReceived += BluetoothService_DeviceMessageReceived;
     }
 
-    private void BluetoothService_DeviceMessageReceived(object? sender, DeviceMessageBytesEventArgs e)
+    public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
-        if (e.Response == null) return;
-        var rawData = Encoding.ASCII.GetString(e.Response);
-        Debug.WriteLine($"Data Received: {rawData}", false);
+        if (query["device"] is PacketExt device)
+            SelectedDevice = device;
+
+        if (SelectedDevice == null) throw new ArgumentNullException(nameof(query));
+        _BluetoothService.ConnectTo(SelectedDevice.ID);
     }
+
+    [RelayCommand]
+    private void Disconnect() => _BluetoothService.DisconnectDevice();
+
+    private void BluetoothService_DeviceMessageReceived(object? sender, DeviceMessageBytesEventArgs e) =>
+        Debug.WriteLine($"Data Received: {Encoding.ASCII.GetString(e.Response)}", false);
 
     private async void BluetoothService_DeviceConnectionStatus(object? sender, EventDataArgs<BLEDeviceStatus> e)
     {
-        ConnectionStatus = e.Data.ToString();
-
         switch (e.Data)
         {
             case BLEDeviceStatus.Connected:
-
                 await _BluetoothService.SetNotifications(DATA_SERVICE, NOTIFY_CHARACTERISTIC);
                 SendToDevice(1000, null);
                 //Services.Clear();
@@ -40,7 +46,7 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
                 //    Services.Add(svc);
                 break;
             case BLEDeviceStatus.Disconnected:
-                //await Shell.Current.GoToAsync("..", true);
+                await Shell.Current.GoToAsync("..", true);
                 break;
         }
     }
@@ -52,21 +58,8 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
         _BluetoothService.Write(request);
     }
 
-    public void ApplyQueryAttributes(IDictionary<string, object> query)
-    {
-        if (query["device"] is PacketExt device)
-            SelectedDevice = device;
-
-        if (SelectedDevice == null) return;
-
-        _BluetoothService.ConnectTo(SelectedDevice.ID);
-    }
-
     [ObservableProperty]
     private PacketExt? _SelectedDevice;
-
-    [ObservableProperty]
-    private string _ConnectionStatus = "Unknown";
 
     [ObservableProperty]
     private ObservableCollection<BLEService> _Services = new();

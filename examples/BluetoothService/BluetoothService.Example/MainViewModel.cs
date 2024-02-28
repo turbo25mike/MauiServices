@@ -25,6 +25,7 @@ public partial class MainViewModel : ObservableObject
         {
             if (!_BluetoothService.IsScanning)
             {
+                FoundDevices.Clear();
                 Status = "Scanning...";
                 //_BluetoothService.Scan();  //open for all BLE devices
                 _BluetoothService.Scan(new[] { SERVICEA, SERVICEB }, 2800); //locked down to specific BLE devices
@@ -39,10 +40,10 @@ public partial class MainViewModel : ObservableObject
         }
     }
 
-
     [RelayCommand]
     private async Task Connect(PacketExt selectedDevice)
     {
+        FoundDevices.Clear();
         await Shell.Current.GoToAsync(nameof(DevicePage), new Dictionary<string, object>() { { "device", selectedDevice } });
     }
 

@@ -16,6 +16,7 @@ public interface IConnectedDevice
     void Read(string serviceID, string characteristicID, Action<KeyValuePair<string, byte[]>> action, bool notify);
     void StopNotifying(string serviceID, string characteristicID);
     bool HasService(string serviceID);
+    void Dispose();
     IEnumerable<BLEService> GetServices();
     bool HasCharacteristic(string serviceID, string characteristicID);
 }

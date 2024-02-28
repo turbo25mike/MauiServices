@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Linq;
 using CoreBluetooth;
 using Foundation;
 
@@ -9,54 +8,67 @@ public class ConnectedDevice : IConnectedDevice
 {
     public ConnectedDevice(CBPeripheral device)
     {
-        Console.WriteLine($"ConnectedDevice: Init({device.Name})");
+        Debug.WriteLine($"ConnectedDevice: Init({device.Name})");
 
         _Device = device;
         Address = _Device.Identifier.ToString();
         MTU = 20; //Default value till we are connected;
 
-        _Device.IsReadyToSendWriteWithoutResponse += (s, e) => IsReadyToSendWriteWithoutResponse?.Invoke(this, new EventArgs());
-
-        _Device.DiscoveredService += (c, v) =>
-        {
-            if (_Device.Services == null) return;
-            Debug.WriteLine($"ConnectedDevice: Service(s) {_Device.Services.Length} Discovered");
-            foreach (var svc in _Device.Services)
-            {
-                Debug.WriteLine($"Service: {svc.UUID}");
-                if (svc.Characteristics == null)
-                    _Device.DiscoverCharacteristics(svc);
-            }
-        };
-
-        _Device.DiscoveredCharacteristics += (j, i) =>
-        {
-            try
-            {
-                Console.WriteLine($"ConnectedDevice: Characteristic Discovered");
-                var serviceCharFound = 0;
-                if (_Device.Services == null)
-                {
-                    Debug.WriteLine($"ConnectedDevice: 0 Characteristics Found");
-                    return;
-                }
-                foreach (var svc in _Device.Services)
-                    if (svc.Characteristics != null)
-                        serviceCharFound++;
-                if (serviceCharFound == _Device.Services.Length)
-                {
-                    MTU = _Device.GetMaximumWriteValueLength(CBCharacteristicWriteType.WithoutResponse) - 3;
-                    GattReady = true;
-                    DeviceReady?.Invoke(this, new EventArgs());
-                }
-                Console.WriteLine($"ConnectedDevice: Characteristic(s) {serviceCharFound} Found");
-            }
-            catch (Exception)
-            {
-            }
-        };
-
+        _Device.IsReadyToSendWriteWithoutResponse += DeviceIsReadyToSendWriteWithoutResponse;
+        _Device.DiscoveredService += ServiceDiscovered;
+        _Device.DiscoveredCharacteristics += CharacteristicsDiscovered;
         _Device.DiscoverServices();
+    }
+
+    public void Dispose()
+    {
+        Debug.WriteLine("ConnectedDevice: Disposing");
+        _Device.IsReadyToSendWriteWithoutResponse -= DeviceIsReadyToSendWriteWithoutResponse;
+        _Device.DiscoveredService -= ServiceDiscovered;
+        _Device.DiscoveredCharacteristics -= CharacteristicsDiscovered;
+        _Device.UpdatedCharacterteristicValue -= CharacterteristicValueUpdated;
+        _Device.UpdatedValue -= PeripheralUpdatedValue;
+    }
+
+    private void DeviceIsReadyToSendWriteWithoutResponse(object sender, EventArgs e) => IsReadyToSendWriteWithoutResponse?.Invoke(this, new EventArgs());
+
+    private void ServiceDiscovered(object sender, NSErrorEventArgs e)
+    {
+        if (_Device.Services == null) return;
+        Debug.WriteLine($"ConnectedDevice: Service(s) {_Device.Services.Length} Discovered");
+        foreach (var svc in _Device.Services)
+        {
+            Debug.WriteLine($"Service: {svc.UUID}");
+            if (svc.Characteristics == null)
+                _Device.DiscoverCharacteristics(svc);
+        }
+    }
+
+    private void CharacteristicsDiscovered(object sender, CBServiceEventArgs e)
+    {
+        try
+        {
+            Debug.WriteLine($"ConnectedDevice: Characteristic Discovered");
+            var serviceCharFound = 0;
+            if (_Device.Services == null)
+            {
+                Debug.WriteLine($"ConnectedDevice: 0 Characteristics Found");
+                return;
+            }
+            foreach (var svc in _Device.Services)
+                if (svc.Characteristics != null)
+                    serviceCharFound++;
+            if (serviceCharFound == _Device.Services.Length)
+            {
+                MTU = _Device.GetMaximumWriteValueLength(CBCharacteristicWriteType.WithoutResponse) - 3;
+                GattReady = true;
+                DeviceReady?.Invoke(this, new EventArgs());
+            }
+            Debug.WriteLine($"ConnectedDevice: Characteristic(s) {serviceCharFound} Found");
+        }
+        catch (Exception)
+        {
+        }
     }
 
     public void Write(string serviceID, string characteristicId, byte[] val, bool withResponse = true)
@@ -69,6 +81,7 @@ public class ConnectedDevice : IConnectedDevice
 
     public void Read(string serviceID, string characteristicID, Action<KeyValuePair<string, byte[]?>> action, bool notify)
     {
+        _NotificationOccured = action;
         var cbID = CBUUID.FromString(serviceID);
         var cbIDString = cbID.Uuid;
         var ch = GetCharacteristic(cbIDString, characteristicID);
@@ -78,8 +91,10 @@ public class ConnectedDevice : IConnectedDevice
             return;
         }
 
-        _Device.UpdatedCharacterteristicValue += (sender, e) => action.Invoke(new KeyValuePair<string, byte[]?>(Address, e.Characteristic.Value?.ToArray()));
-        _Device.UpdatedValue += (sender, e) => action.Invoke(new KeyValuePair<string, byte[]?>(Address, (e.Descriptor.Value as NSData)?.ToArray()));
+        Debug.WriteLine("ConnectedDevice: Read - setting up read response");
+
+        _Device.UpdatedCharacterteristicValue += CharacterteristicValueUpdated;
+        _Device.UpdatedValue += PeripheralUpdatedValue;
         if (notify)
         {
             _Device.SetNotifyValue(true, ch);
@@ -90,8 +105,22 @@ public class ConnectedDevice : IConnectedDevice
         }
     }
 
+    private void PeripheralUpdatedValue(object sender, CBDescriptorEventArgs e)
+    {
+
+        Debug.WriteLine($"ConnectedDevice: PeripheralUpdatedValue");
+        _NotificationOccured?.Invoke(new KeyValuePair<string, byte[]>(Address, (e.Descriptor.Value as NSData)?.ToArray()));
+    }
+
+    private void CharacterteristicValueUpdated(object sender, CBCharacteristicEventArgs e)
+    {
+        Debug.WriteLine($"ConnectedDevice: CharacterteristicValueUpdated");
+        _NotificationOccured?.Invoke(new KeyValuePair<string, byte[]>(Address, e.Characteristic.Value?.ToArray()));
+    }
+
     public void StopNotifying(string serviceID, string characteristicID)
     {
+        Debug.WriteLine($"ConnectedDevice: StopNotifying");
         var ch = GetCharacteristic(serviceID, characteristicID);
         if (ch == null) return;
         _Device.SetNotifyValue(false, ch);
@@ -133,6 +162,7 @@ public class ConnectedDevice : IConnectedDevice
     }
 
     private readonly CBPeripheral _Device;
+    private Action<KeyValuePair<string, byte[]>> _NotificationOccured;
 
     public nuint MTU { get; private set; }
     public bool GattReady { get; private set; }
