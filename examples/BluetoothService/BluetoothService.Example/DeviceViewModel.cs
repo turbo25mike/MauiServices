@@ -3,7 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Turbo.Maui.Services;
 using System.Collections.ObjectModel;
 using System.Text;
-using System.Diagnostics;
+
 using BluetoothService.Example.Utilities;
 using CommunityToolkit.Mvvm.Input;
 
@@ -31,7 +31,7 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
     private void Disconnect() => _BluetoothService.DisconnectDevice();
 
     private void BluetoothService_DeviceMessageReceived(object? sender, DeviceMessageBytesEventArgs e) =>
-        Debug.WriteLine($"Data Received: {Encoding.ASCII.GetString(e.Response)}", false);
+        Messages += $"Notification: {Encoding.ASCII.GetString(e.Response)}\n";
 
     private async void BluetoothService_DeviceConnectionStatus(object? sender, EventDataArgs<BLEDeviceStatus> e)
     {
@@ -56,10 +56,15 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
         var data = Encoding.UTF8.GetBytes(Radix64Util.Generate(register, 1, value));
         var request = new BLERequest(DATA_SERVICE, WRITE_CHARACTERISTIC, data);
         _BluetoothService.Write(request);
+
+        Messages += $"Write Response: {request.Response}\n";
     }
 
     [ObservableProperty]
     private PacketExt? _SelectedDevice;
+
+    [ObservableProperty]
+    private string _Messages = "";
 
     [ObservableProperty]
     private ObservableCollection<BLEService> _Services = new();

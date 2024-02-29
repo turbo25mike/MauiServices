@@ -29,55 +29,6 @@ public partial class BLEAdapter : IBluetoothAdapter
         };
     }
 
-    void _Adapter_UpdatedState(object? sender, EventArgs e)
-    {
-        BluetoothStateChanged?.Invoke(this, new EventArgs());
-        Debug.WriteLine($"BLEAdapter State Updated: {_Adapter.State}");
-        if (_Adapter.State == CBManagerState.PoweredOn && _IsRunning)
-            StartScanningForDevices();
-        else if (_Adapter.State == CBManagerState.PoweredOff)
-        {
-            _DevicesFound.Clear();
-            var wasRunning = _IsRunning;
-            StopScanningForDevices();
-            _IsRunning = wasRunning;
-            DisposeConnectedDevice();
-        }
-    }
-
-    void DisposeConnectedDevice()
-    {
-        Debug.WriteLine("BLE Adapter: Disposing Connected Device");
-        if (_ConnectedPeripheral != null)
-        {
-            _ConnectedPeripheral?.Dispose();
-            _ConnectedPeripheral = null;
-        }
-        if (ConnectedDevice != null)
-        {
-            ConnectedDevice.Dispose();
-            ConnectedDevice = null;
-            DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Disconnected));
-        }
-    }
-
-    public CBManagerState GetCurrentState() => _Adapter.State;
-
-    private List<CBUUID> _PeripheralUUIDs = new();
-    private void AddPeripherals(string[]? uuids)
-    {
-        if (uuids != null)
-        {
-            foreach (var uuid in uuids)
-            {
-                var cbuuid = CBUUID.FromString(uuid);
-
-                if (!_PeripheralUUIDs.Contains(cbuuid))
-                    _PeripheralUUIDs.Add(cbuuid);
-            }
-        }
-    }
-
     public Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {
         if (IsScanning) return Task.FromResult(true);
@@ -112,10 +63,6 @@ public partial class BLEAdapter : IBluetoothAdapter
         }
     }
 
-    public bool IsPoweredOn => _Adapter.State == CBManagerState.PoweredOn;
-
-    public bool CanAccess => _Adapter.State != CBManagerState.Unauthorized;
-
     public void StopScanningForDevices()
     {
         _IsRunning = false;
@@ -143,11 +90,60 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public void DisconnectDevice()
     {
-        DisposeConnectedDevice();
         _Adapter.CancelPeripheralConnection(_ConnectedPeripheral);
+        DisposeConnectedDevice();
     }
 
-    void OnScanResult(object? sender, CBDiscoveredPeripheralEventArgs result)
+    private void _Adapter_UpdatedState(object? sender, EventArgs e)
+    {
+        BluetoothStateChanged?.Invoke(this, new EventArgs());
+        Debug.WriteLine($"BLEAdapter State Updated: {_Adapter.State}");
+        if (_Adapter.State == CBManagerState.PoweredOn && _IsRunning)
+            StartScanningForDevices();
+        else if (_Adapter.State == CBManagerState.PoweredOff)
+        {
+            _DevicesFound.Clear();
+            var wasRunning = _IsRunning;
+            StopScanningForDevices();
+            _IsRunning = wasRunning;
+            DisposeConnectedDevice();
+        }
+    }
+
+    private void DisposeConnectedDevice()
+    {
+        Debug.WriteLine("BLE Adapter: Disposing Connected Device");
+
+        if (ConnectedDevice != null)
+        {
+            ConnectedDevice.Dispose();
+            ConnectedDevice = null;
+        }
+
+        if (_ConnectedPeripheral != null)
+        {
+            _ConnectedPeripheral?.Dispose();
+            _ConnectedPeripheral = null;
+        }
+
+        DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Disconnected));
+    }
+
+    private void AddPeripherals(string[]? uuids)
+    {
+        if (uuids != null)
+        {
+            foreach (var uuid in uuids)
+            {
+                var cbuuid = CBUUID.FromString(uuid);
+
+                if (!_PeripheralUUIDs.Contains(cbuuid))
+                    _PeripheralUUIDs.Add(cbuuid);
+            }
+        }
+    }
+
+    private void OnScanResult(object? sender, CBDiscoveredPeripheralEventArgs result)
     {
         try
         {
@@ -190,6 +186,9 @@ public partial class BLEAdapter : IBluetoothAdapter
         }
     }
 
+    public CBManagerState GetCurrentState() => _Adapter.State;
+    public bool IsPoweredOn => _Adapter.State == CBManagerState.PoweredOn;
+    public bool CanAccess => _Adapter.State != CBManagerState.Unauthorized;
     public IConnectedDevice? ConnectedDevice { get; private set; }
     public event EventHandler<EventDataArgs<BLEDeviceStatus>> DeviceConnectionStatus = delegate { };
     public event EventHandler<EventDataArgs<Packet>> DeviceDiscovered = delegate { };
@@ -197,6 +196,7 @@ public partial class BLEAdapter : IBluetoothAdapter
     public event EventHandler<EventArgs> BluetoothStateChanged;
     public bool IsScanning { get; private set; }
 
+    private List<CBUUID> _PeripheralUUIDs = new();
     bool _IsRunning; //this enables scanning to restart when the bluetooth gets turned off/on outside of the app.
     Dictionary<string, CBPeripheral> _DevicesFound = new();
     CBPeripheral? _ConnectedPeripheral;

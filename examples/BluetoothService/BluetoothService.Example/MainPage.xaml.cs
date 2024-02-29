@@ -7,4 +7,16 @@ public partial class MainPage : ContentPage
         InitializeComponent();
         BindingContext = vm;
     }
+
+    protected override void OnDisappearing()
+    {
+        base.OnDisappearing();
+        ((MainViewModel)BindingContext).OnDisappearing();
+    }
+
+    protected override void OnAppearing()
+    {
+        base.OnAppearing();
+        ((MainViewModel)BindingContext).OnAppearing();
+    }
 }

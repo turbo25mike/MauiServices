@@ -12,10 +12,20 @@ public partial class MainViewModel : ObservableObject
     public MainViewModel(IBluetoothService bluetoothService)
     {
         _BluetoothService = bluetoothService;
+    }
+
+    public void OnAppearing()
+    {
         _BluetoothService.PacketDiscovered += PacketDiscovered;
         _BluetoothService.BluetoothStateChanged += (s, e) => CheckStatus();
 
         CheckStatus();
+    }
+
+    public void OnDisappearing()
+    {
+        _BluetoothService.PacketDiscovered -= PacketDiscovered;
+        _BluetoothService.BluetoothStateChanged -= (s, e) => CheckStatus();
     }
 
     [RelayCommand]
@@ -44,6 +54,9 @@ public partial class MainViewModel : ObservableObject
     private async Task Connect(PacketExt selectedDevice)
     {
         FoundDevices.Clear();
+        Status = "Stopped";
+        ButtonText = "Scan";
+        _BluetoothService.Stop();
         await Shell.Current.GoToAsync(nameof(DevicePage), new Dictionary<string, object>() { { "device", selectedDevice } });
     }
 

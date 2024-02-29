@@ -9,7 +9,8 @@
     <VerticalStackLayout Margin="10">
         <Label Text="Services" />
         <Button Text="Disconnect" Command="{Binding DisconnectCommand}" />
-        <ScrollView>
+        <ScrollView HeightRequest="300">
+            <Label Text="{Binding Messages}" />
             <!--<VerticalStackLayout Spacing="3" BindableLayout.ItemsSource="{Binding Services}">
                 <BindableLayout.ItemTemplate>
                     <DataTemplate x:DataType="models:BLEService">

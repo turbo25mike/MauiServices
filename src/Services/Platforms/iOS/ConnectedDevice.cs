@@ -23,6 +23,7 @@ public class ConnectedDevice : IConnectedDevice
     public void Dispose()
     {
         Debug.WriteLine("ConnectedDevice: Disposing");
+        if (_Device is null) return;
         _Device.IsReadyToSendWriteWithoutResponse -= DeviceIsReadyToSendWriteWithoutResponse;
         _Device.DiscoveredService -= ServiceDiscovered;
         _Device.DiscoveredCharacteristics -= CharacteristicsDiscovered;
