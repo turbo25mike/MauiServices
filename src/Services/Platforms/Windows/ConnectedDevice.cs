@@ -29,12 +29,14 @@ public class ConnectedDevice : IConnectedDevice
     }
 
 
-    private void Gatt_MaxPduSizeChanged(object? sender, object e) => MTU = _Gatt.MaxPduSize;
+    private void Gatt_MaxPduSizeChanged(object? sender, object e) =>
+        MTU = (_Gatt is null || _Device.ConnectionStatus == BluetoothConnectionStatus.Disconnected) ? 20 : (uint)_Gatt.MaxPduSize;
 
     public async void Write(string serviceID, string characteristicID, byte[] val, bool withResponse = true)
     {
         var ch = GetCharacteristic(serviceID, characteristicID);
 
+        if (ch is null) return;
         _WriteInProgress = true;
         var writeType = withResponse ? GattWriteOption.WriteWithResponse : GattWriteOption.WriteWithoutResponse;
         await ch.WriteValueAsync(CryptographicBuffer.CreateFromByteArray(val), writeType);
@@ -44,23 +46,32 @@ public class ConnectedDevice : IConnectedDevice
     {
         try
         {
+            _ReadAction = action;
             var deviceId = BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString();
             var ch = GetCharacteristic(serviceID, characteristicID);
 
+            if (ch is null) return;
+
             if (notify)
             {
-                ch.ValueChanged += (s, e) => action.Invoke(new KeyValuePair<string, byte[]?>(deviceId, e.CharacteristicValue?.ToArray()));
+                ch.ValueChanged += ValueChanged;
                 var result = await ch.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.Notify);
             }
             else
             {
                 var readResult = await ch.ReadValueAsync(BluetoothCacheMode.Uncached);
-                action.Invoke(new KeyValuePair<string, byte[]?>(_Device.DeviceId, readResult.Value?.ToArray()));
+                _ReadAction.Invoke(new KeyValuePair<string, byte[]?>(_Device.DeviceId, readResult.Value?.ToArray()));
             }
-        }catch(Exception ex)
+        } catch (Exception ex)
         {
 
         }
+    }
+
+    private void ValueChanged(object sender, GattValueChangedEventArgs e)
+    {
+        var deviceId = BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString();
+        _ReadAction?.Invoke(new KeyValuePair<string, byte[]?>(deviceId, e.CharacteristicValue?.ToArray()));
     }
 
     public void Dispose()
@@ -80,15 +91,22 @@ public class ConnectedDevice : IConnectedDevice
         await ch.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None);
     }
 
-    public IEnumerable<BLEService> GetServices() =>
-        _Services.Select(s => new BLEService(s.Key.Uuid.ToString().ToUpper(), s.Value.Select(c => new BLECharacteristic(c.Uuid.ToString().ToUpper(), c.UserDescription))));
+    public IEnumerable<BLEService> GetServices()
+    {
+        if (_Services is null) return null;
+        return _Services.Select(s => new BLEService(s.Key.Uuid.ToString().ToUpper(), s.Value.Select(c => new BLECharacteristic(c.Uuid.ToString().ToUpper(), c.UserDescription))));
+    }
 
-    private KeyValuePair<GattDeviceService, IEnumerable<GattCharacteristic>>? GetService(string uuid) =>
-        _Services.FirstOrDefault(s => s.Key.Uuid.ToString().Equals(uuid, StringComparison.CurrentCultureIgnoreCase));
+    private KeyValuePair<GattDeviceService, IEnumerable<GattCharacteristic>>? GetService(string uuid) 
+    {
+        if (_Services is null) return null;
+        return _Services.FirstOrDefault(s => s.Key.Uuid.ToString().Equals(uuid, StringComparison.CurrentCultureIgnoreCase));
+    }
     
     private GattCharacteristic GetCharacteristic(string serviceID, string uuid)
     {
         var service = GetService(serviceID);
+        if (service is null) return null;
         var ch = service?.Value.FirstOrDefault(s => s.Uuid.ToString().Equals(uuid, StringComparison.CurrentCultureIgnoreCase));
         return ch;
     }
@@ -113,4 +131,5 @@ public class ConnectedDevice : IConnectedDevice
     readonly GattSession _Gatt;
     readonly BluetoothLEDevice _Device;
     private bool _WriteInProgress = false;
+    private Action<KeyValuePair<string, byte[]>> _ReadAction;
 }
