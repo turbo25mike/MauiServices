@@ -105,6 +105,7 @@ public partial class BLEAdapter : IBluetoothAdapter
     {
         Debug.WriteLine("ConnectionStatusChanged: " + sender.ConnectionStatus);
         if (sender.ConnectionStatus == BluetoothConnectionStatus.Connected) GetServices(sender);
+        if(sender.ConnectionStatus == BluetoothConnectionStatus.Disconnected) DisconnectDevice();
     }
 
     private async void GetServices(BluetoothLEDevice d)
@@ -149,6 +150,7 @@ public partial class BLEAdapter : IBluetoothAdapter
     {
         if (ConnectedDevice == null) return;
         // Windows doesn't support disconnecting, so currently just dispose of the device
+        ConnectedDevice.Dispose();
         DisposeGattSession();
         ConnectedDevice = null;
         DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Disconnected));

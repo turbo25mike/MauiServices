@@ -48,7 +48,10 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
                 //    Services.Add(svc);
                 break;
             case BLEDeviceStatus.Disconnected:
-                await Shell.Current.GoToAsync("..", true);
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await Shell.Current.GoToAsync("..", true);
+                });
                 break;
         }
     }

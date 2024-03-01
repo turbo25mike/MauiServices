@@ -65,7 +65,7 @@ public class ConnectedDevice : IConnectedDevice
 
     public void Dispose()
     {
-        if (_Device.GattServices is null) return;
+        if (_Device.ConnectionStatus == BluetoothConnectionStatus.Disconnected || _Device.GattServices is null) return;
         foreach (var service in _Device.GattServices)
         {
             service.Session?.Dispose();
