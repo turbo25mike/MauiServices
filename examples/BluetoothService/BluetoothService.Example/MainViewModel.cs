@@ -115,7 +115,6 @@ public partial class MainViewModel : ObservableObject
             });
     }
 
-
     [ObservableProperty]
     private string _Status = "Awaiting User";
 

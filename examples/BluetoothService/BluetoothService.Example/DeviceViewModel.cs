@@ -20,6 +20,7 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
 
     public void ApplyQueryAttributes(IDictionary<string, object> query)
     {
+        Messages = "";
         if (query["device"] is PacketExt device)
             SelectedDevice = device;
 
@@ -35,6 +36,7 @@ public partial class DeviceViewModel : ObservableObject, IQueryAttributable
 
     private async void BluetoothService_DeviceConnectionStatus(object? sender, EventDataArgs<BLEDeviceStatus> e)
     {
+        Messages += $"Device Status: {e.Data}\n";
         switch (e.Data)
         {
             case BLEDeviceStatus.Connected:

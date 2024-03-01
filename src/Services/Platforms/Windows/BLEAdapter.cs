@@ -60,13 +60,13 @@ public partial class BLEAdapter : IBluetoothAdapter
             _BleWatcher.Stop();
             _BleWatcher = null;
         }
+
+        IsScanning = false;
     }
 
     public async void ConnectTo(string address)
     {
         Debug.WriteLine($"ConnectTo: {address}");
-
-
         DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connecting));
         StopScanningForDevices();
         var d = _DevicesFound[Guid.Parse(address)];
@@ -151,6 +151,7 @@ public partial class BLEAdapter : IBluetoothAdapter
         // Windows doesn't support disconnecting, so currently just dispose of the device
         DisposeGattSession();
         ConnectedDevice = null;
+        DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Disconnected));
     }
 
     /// <summary>
@@ -211,9 +212,7 @@ public partial class BLEAdapter : IBluetoothAdapter
 
 
         DeviceDiscovered?.Invoke(this, new(packet));
-    }
-
-    
+    }   
 
     Dictionary<Guid, BluetoothLEDevice> _DevicesFound = new();
 
