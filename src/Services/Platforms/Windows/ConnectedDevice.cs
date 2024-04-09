@@ -35,26 +35,27 @@ public class ConnectedDevice : IConnectedDevice
     private void Gatt_MaxPduSizeChanged(object? sender, object e) =>
         MTU = (_Gatt is null || _Device.ConnectionStatus == BluetoothConnectionStatus.Disconnected) ? 20 : (uint)_Gatt.MaxPduSize;
 
-    public Task<IBLERequest> Write(IBLERequest request)
+    public async Task<IBLERequest> Write(IBLERequest request)
     {
         var ch = GetCharacteristic(request.ServiceID, request.CharacteristicID);
 
-        if (ch is null) return;
+        if (ch is null) return request;
         _WriteInProgress = true;
         var writeType = request.WithResponse ? GattWriteOption.WriteWithResponse : GattWriteOption.WriteWithoutResponse;
         await ch.WriteValueAsync(CryptographicBuffer.CreateFromByteArray(val), writeType);
         return request;
     }
 
-    public Task<IBLERequest> Read(IBLERequest request)
+    public async Task<IBLERequest> Read(IBLERequest request)
     {
         var deviceId = BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString();
         var ch = GetCharacteristic(serviceID, characteristicID);
 
-        if (ch is null) return;
+        if (ch is null) return request;
 
         var readResult = await ch.ReadValueAsync(BluetoothCacheMode.Uncached);
         request.SetResponse(readResult.Value?.ToArray());
+        return request;
     }
 
     public void Dispose()
