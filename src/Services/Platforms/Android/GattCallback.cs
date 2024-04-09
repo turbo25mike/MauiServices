@@ -30,7 +30,7 @@ public class GattCallback : BluetoothGattCallback
         if (OperatingSystem.IsAndroidVersionAtLeast(33))
         {
             base.OnCharacteristicRead(gatt, characteristic, value, status);
-            CharacteristicRead?.Invoke(this, new(value));
+            CharacteristicRead?.Invoke(this, new(characteristic, value));
         }
     }
 
@@ -48,7 +48,7 @@ public class GattCallback : BluetoothGattCallback
             base.OnCharacteristicRead(gatt, characteristic, status);
             var result = characteristic.GetValue();
             if (result != null)
-                CharacteristicRead?.Invoke(this, new(result));
+                CharacteristicRead?.Invoke(this, new(characteristic, result));
         }
     }
 
@@ -61,7 +61,7 @@ public class GattCallback : BluetoothGattCallback
     public override void OnCharacteristicWrite(BluetoothGatt? gatt, BluetoothGattCharacteristic? characteristic, GattStatus status)
     {
         base.OnCharacteristicWrite(gatt, characteristic, status);
-        CharacteristicWrite?.Invoke(this, new());
+        CharacteristicWrite?.Invoke(this, new(characteristic, status));
         //Console.WriteLine($"GattCallback->OnCharacteristicWrite");
     }
 
@@ -77,7 +77,7 @@ public class GattCallback : BluetoothGattCallback
         if (OperatingSystem.IsAndroidVersionAtLeast(33))
         {
             base.OnCharacteristicChanged(gatt, characteristic, value);
-            CharacteristicChanged?.Invoke(this, new(value));
+            CharacteristicChanged?.Invoke(this, new(characteristic, value));
         }
     }
 
@@ -89,7 +89,7 @@ public class GattCallback : BluetoothGattCallback
             base.OnCharacteristicChanged(gatt, characteristic);
             var bytes = characteristic.GetValue();
             if (bytes != null)
-                CharacteristicChanged?.Invoke(this, new(bytes));
+                CharacteristicChanged?.Invoke(this, new(characteristic, bytes));
         }
     }
 
@@ -101,14 +101,35 @@ public class GattCallback : BluetoothGattCallback
 
     public event EventHandler<ServicesDiscoveredEventArgs>? ServicesDiscovered;
     public event EventHandler<EventDataArgs<BLEDeviceStatus>>? DeviceStatus;
-    public event EventHandler<EventDataArgs<byte[]>>? CharacteristicChanged;
-    public event EventHandler<EventDataArgs<byte[]>>? CharacteristicRead;
-    public event EventHandler? CharacteristicWrite;
+    public event EventHandler<CharacteristicEventArgs>? CharacteristicChanged;
+    public event EventHandler<CharacteristicEventArgs>? CharacteristicRead;
+    public event EventHandler<CharacteristicWriteEventArgs>? CharacteristicWrite;
     public event EventHandler<EventDataArgs<nuint>>? MtuChanged;
 }
 
-public class CharacteristicReadEventArgs
+
+public class CharacteristicWriteEventArgs
 {
+    public CharacteristicWriteEventArgs(BluetoothGattCharacteristic characteristic, GattStatus status)
+    {
+        Characteristic = characteristic;
+        Status = status;
+    }
+
+    public BluetoothGattCharacteristic Characteristic { get; private set; }
+    public GattStatus Status { get; private set; }
+}
+
+public class CharacteristicEventArgs
+{
+    public CharacteristicEventArgs(BluetoothGattCharacteristic characteristic, byte[] data)
+    {
+        Characteristic = characteristic;
+        Data = data;
+    }
+
+    public BluetoothGattCharacteristic Characteristic { get; private set; }
+    public byte[] Data { get; private set; }
 }
 
 public class ServicesDiscoveredEventArgs

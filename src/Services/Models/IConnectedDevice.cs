@@ -4,16 +4,14 @@ public interface IConnectedDevice
 {
     bool GattReady { get; }
     event EventHandler DeviceReady;
-    event EventHandler IsReadyToSendWriteWithoutResponse;
-    event EventHandler CharacteristicWrite;
+    event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>>? CharacteristicChanged;
 
     nuint MTU { get; }
     Task<nuint> RequestMTU(int size);
-    bool CanSendWriteWithoutResponse();
-    bool CanSendWrite();
     string Address { get; }
-    void Write(string serviceID, string characteristicID, byte[] val, bool withResponse = true);
-    void Read(string serviceID, string characteristicID, Action<KeyValuePair<string, byte[]>> action, bool notify);
+    Task<IBLERequest> Write(IBLERequest request);
+    Task<IBLERequest> Read(IBLERequest request);
+    Task StartNotifying(string serviceID, string characteristicID);
     void StopNotifying(string serviceID, string characteristicID);
     bool HasService(string serviceID);
     void Dispose();

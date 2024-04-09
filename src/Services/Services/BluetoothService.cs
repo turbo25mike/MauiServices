@@ -1,4 +1,6 @@
-﻿namespace Turbo.Maui.Services;
+﻿using System.Diagnostics;
+
+namespace Turbo.Maui.Services;
 
 public interface IBluetoothService
 {
@@ -6,17 +8,16 @@ public interface IBluetoothService
     void Stop();
     void Scan(string[] uuids = null, int? manufacturerID = null);
     void ConnectTo(string deviceID);
-    Task SetNotifications(string service, string characteristic);
+    Task StartNotifying(string service, string characteristic);
+    void StopNotifying(string service, string characteristic);
     Task<int> RequestMTU(int size);
-    void Write(IBLERequest request);
-    Task WriteAsync(IBLERequest request);
-    Task<IBLERequest> WriteAndNotifyAsync(IBLERequest request);
+    Task<IBLERequest> Write(IBLERequest request);
+    Task<IBLERequest> Read(IBLERequest request);
     void DisconnectDevice();
-    Task IsReadyToSendWriteWithoutResponse();
     event EventHandler<EventDataArgs<Packet>> PacketDiscovered;
     event EventHandler<EventDataArgs<BLEDeviceStatus>> DeviceConnectionStatus;
     event EventHandler<EventArgs> Stopped;
-    event EventHandler<DeviceMessageBytesEventArgs> DeviceMessageReceived;
+    event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>> NotificationReceived;
     event EventHandler<EventArgs> BluetoothStateChanged;
     bool IsScanning { get; }
     bool HasAccess { get; }
@@ -28,12 +29,12 @@ public class BluetoothService : IBluetoothService
 {
     public BluetoothService(IBluetoothAdapter adapter)
     {
+        Debug.WriteLine("BluetoothSevice Init");
         _Adapter = adapter;
         _Adapter.BluetoothStateChanged += Adapter_BluetoothStateChanged;
         _Adapter.DeviceDiscovered += DeviceDiscovered;
         _Adapter.DeviceConnectionStatus += Adapter_DeviceConnectionStatus;
     }
-
 
     #region Public Methods
 
@@ -52,73 +53,26 @@ public class BluetoothService : IBluetoothService
 
     public void ConnectTo(string deviceID) => _Adapter.ConnectTo(deviceID);
 
-    public void DisconnectDevice()
-    {
-        _IsFetchingData?.TrySetResult(null);
-        _Adapter.DisconnectDevice();
-    }
-
-    public Task IsReadyToSendWriteWithoutResponse()
-    {
-        _IsReadyToSendWrite = new TaskCompletionSource();
-        if (ConnectedDevice.CanSendWriteWithoutResponse())
-            return Task.CompletedTask;
-        return _IsReadyToSendWrite.Task;
-    }
-
+    public void DisconnectDevice() => _Adapter.DisconnectDevice();
+    
     public async Task<int> RequestMTU(int size)
     {
         var result = await ConnectedDevice.RequestMTU(size);
         return (int)result;
     }
 
-    public Task CanSendWriteRequest()
+    public Task<IBLERequest> Write(IBLERequest request) => ConnectedDevice.Write(request);
+
+    public Task<IBLERequest> Read(IBLERequest request) => ConnectedDevice.Read(request);
+
+    public async Task StartNotifying(string service, string characteristic) => await ConnectedDevice.StartNotifying(service, characteristic);
+    
+    private void ConnectedDevice_CharacteristicChanged(object sender, EventDataArgs<Tuple<string, string, byte[]>> e)
     {
-        _IsReadyToSendWrite = new TaskCompletionSource();
-        if (ConnectedDevice.CanSendWriteWithoutResponse())
-            return Task.CompletedTask;
-        return _IsReadyToSendWrite.Task;
+        NotificationReceived?.Invoke(this, e);
     }
 
-    public void Write(IBLERequest request) => ConnectedDevice.Write(request.ServiceID, request.CharacteristicID, request.Data, request.WithResponse);
-
-    public Task WriteAsync(IBLERequest request)
-    {
-        _IsReadyToSendWrite = new TaskCompletionSource();
-        if (!ConnectedDevice.CanSendWrite())
-            ConnectedDevice.CharacteristicWrite += ConnectedDevice_CharacteristicWrite;
-        ConnectedDevice.Write(request.ServiceID, request.CharacteristicID, request.Data, request.WithResponse);
-        return _IsReadyToSendWrite.Task;
-    }
-
-    private void ConnectedDevice_CharacteristicWrite(object sender, EventArgs e)
-    {
-        ConnectedDevice.CharacteristicWrite -= ConnectedDevice_CharacteristicWrite;
-        _IsReadyToSendWrite?.TrySetResult();
-    }
-
-    public Task<IBLERequest> WriteAndNotifyAsync(IBLERequest request)
-    {
-        _IsFetchingData = new TaskCompletionSource<IBLERequest>();
-        _CurrentRequest = request;
-        ConnectedDevice.Write(request.ServiceID, request.CharacteristicID, request.Data, request.WithResponse);
-        return _IsFetchingData.Task;
-    }
-
-    public async Task SetNotifications(string service, string characteristic)
-    {
-        ConnectedDevice.Read(service, characteristic, (e) =>
-        {
-            if (e.Value == null) return;
-            if (_CurrentRequest != null && _CurrentRequest.SetResponse(e.Value))
-                _IsFetchingData.TrySetResult(_CurrentRequest);
-            DeviceMessageReceived?.Invoke(this, new(e.Value));
-        }, true);
-
-#if ANDROID
-        await Task.Delay(250);
-#endif
-    }
+    public void StopNotifying(string service, string characteristic) => ConnectedDevice.StopNotifying(service, characteristic);
 
     #endregion
 
@@ -129,24 +83,29 @@ public class BluetoothService : IBluetoothService
         switch (e.Data)
         {
             case BLEDeviceStatus.Connected:
-                ConnectedDevice.IsReadyToSendWriteWithoutResponse += ConnectedDevice_IsReadyToSendWriteWithoutResponse;
+                Debug.WriteLine($"BluetoothService->Adapter_DeviceConnectionStatus: Connected");
+                ConnectedDevice.CharacteristicChanged -= ConnectedDevice_CharacteristicChanged;
+                ConnectedDevice.CharacteristicChanged += ConnectedDevice_CharacteristicChanged;
                 if (ConnectedDevice.GattReady)
-                    DeviceReady();
+                    DeviceReady(this, new());
                 else
-                    ConnectedDevice.DeviceReady += (s, ei) => DeviceReady();
+                {
+                    ConnectedDevice.DeviceReady -= DeviceReady;
+                    ConnectedDevice.DeviceReady += DeviceReady;
+                }
                 break;
             case BLEDeviceStatus.Disconnected:
-
-                if (_IsFetchingData != null)
-                    _IsFetchingData.TrySetResult(null);
+                Debug.WriteLine($"BluetoothService->Adapter_DeviceConnectionStatus: Disconnected");
                 DeviceConnectionStatus?.Invoke(this, e);
                 break;
         }
     }
 
-    private void ConnectedDevice_IsReadyToSendWriteWithoutResponse(object sender, EventArgs e) => _IsReadyToSendWrite?.TrySetResult();
-
-    private void DeviceReady() => DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
+    private void DeviceReady(object? s, EventArgs e)
+    {
+        Debug.WriteLine($"BluetoothService->DeviceReady");
+        DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
+    }
 
     private void DeviceDiscovered(object sender, EventDataArgs<Packet> e) => PacketDiscovered?.Invoke(this, e);
 
@@ -168,16 +127,12 @@ public class BluetoothService : IBluetoothService
     public event EventHandler<EventArgs> Stopped;
     public event EventHandler<EventArgs> BluetoothStateChanged;
     public event EventHandler<EventDataArgs<BLEDeviceStatus>> DeviceConnectionStatus;
-    public event EventHandler<DeviceMessageBytesEventArgs> DeviceMessageReceived;
+    public event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>> NotificationReceived;
     public bool IsScanning => _Adapter.IsScanning;
     public bool HasAccess => _Adapter.CanAccess;
     public bool IsPoweredOn => _Adapter.IsPoweredOn;
 
     readonly IBluetoothAdapter _Adapter;
-
-    IBLERequest _CurrentRequest;
-    TaskCompletionSource<IBLERequest> _IsFetchingData;
-    TaskCompletionSource _IsReadyToSendWrite;
 
     #endregion
 }

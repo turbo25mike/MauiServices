@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices.WindowsRuntime;
+﻿using System;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Devices.Bluetooth;
 using Windows.Devices.Bluetooth.GenericAttributeProfile;
 using Windows.Security.Cryptography;
@@ -124,8 +125,7 @@ public class ConnectedDevice : IConnectedDevice
 
     public nuint MTU { get; private set; }
     public event EventHandler<EventDataArgs<string[]>>? ServicesDiscovered = delegate { };
-    public event EventHandler? IsReadyToSendWriteWithoutResponse;
-    public event EventHandler? CharacteristicWrite;
+    public event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>>? CharacteristicChanged;
     public event EventHandler? DeviceReady;
 
     readonly GattSession _Gatt;
