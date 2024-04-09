@@ -25,7 +25,8 @@ jobs:
       - name: Build solution and generate NuGet package and Push
         run: |
           cd src/Services
-          dotnet workload install maui
+          dotnet workload install maui-ios
+          dotnet workload install maui-android
           dotnet workload install maui-windows
           dotnet pack -c Release -o out
           cd out
