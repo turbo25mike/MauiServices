@@ -25,8 +25,7 @@ jobs:
       - name: Build solution and generate NuGet package and Push
         run: |
           cd src/Services
-          dotnet workload install maui
-          dotnet workload install maui-windows
+          dotnet workload restore
           dotnet pack -c Release -o out
           cd out
           dotnet nuget push *.nupkg --api-key ${{secrets.NUGET_TOKEN}} --source https://api.nuget.org/v3/index.json
