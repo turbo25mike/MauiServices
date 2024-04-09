@@ -42,14 +42,14 @@ public class ConnectedDevice : IConnectedDevice
         if (ch is null) return request;
         _WriteInProgress = true;
         var writeType = request.WithResponse ? GattWriteOption.WriteWithResponse : GattWriteOption.WriteWithoutResponse;
-        await ch.WriteValueAsync(CryptographicBuffer.CreateFromByteArray(val), writeType);
+        await ch.WriteValueAsync(CryptographicBuffer.CreateFromByteArray(request.Data), writeType);
         return request;
     }
 
     public async Task<IBLERequest> Read(IBLERequest request)
     {
         var deviceId = BLEUtils.ParseDeviceId(_Device.BluetoothAddress).ToString();
-        var ch = GetCharacteristic(serviceID, characteristicID);
+        var ch = GetCharacteristic(request.ServiceID, request.CharacteristicID);
 
         if (ch is null) return request;
 
