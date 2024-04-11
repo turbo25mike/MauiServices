@@ -152,13 +152,19 @@ public partial class BLEAdapter : IBluetoothAdapter
             var ad = result.AdvertisementData;
             if (ad.Values == null) return;
 
-            var localname = ad.ValueForKey(CBAdvertisement.DataLocalNameKey); //localname may be different then cached name. see: https://developer.apple.com/forums/thread/72343
+            var name = result.Peripheral.Name;
+            if (ad.ContainsKey(CBAdvertisement.DataLocalNameKey))
+            {
+                // iOS caches the peripheral name, so it can become stale (if changing)
+                // keep track of the local name key manually
+                name = ((NSString)ad.ValueForKey(CBAdvertisement.DataLocalNameKey)).ToString();
+            }
 
             Packet packet = new Packet
             {
                 RSSI = result.RSSI.Int32Value,
                 ID = result.Peripheral.Identifier.ToString(),
-                Name = localname?.ToString()
+                Name = name ?? ""
             };
 
             var md = ad.ValueForKey(CBAdvertisement.DataManufacturerDataKey);
