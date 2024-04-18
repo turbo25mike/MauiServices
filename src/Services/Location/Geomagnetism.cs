@@ -11,6 +11,15 @@ Satellite and Information Service, National Geophysical Data Center
 http://www.ngdc.noaa.gov/geomag/WMM/DoDWMM.shtml
 **/
 
+public class GeomagnetismException : Exception
+{
+    public GeomagnetismException() { }
+
+    public GeomagnetismException(string message) : base(message) { }
+
+    public GeomagnetismException(string message, Exception inner) : base(message, inner) { }
+}
+
 public class Geomagnetism
 {
     /** Initialise the instance and calculate for given location and date
@@ -21,14 +30,21 @@ public class Geomagnetism
 		- date: Date of the calculation*/
     public Geomagnetism(double latitude, double longitude, double altitude = 0, DateTime? date = null)
     {
-        if (date == null) date = DateTime.Now;
-        Init();
-        Calculate(latitude, longitude, altitude, date.Value);
+        try
+        {
+            if (date == null) date = DateTime.Now;
+            Init();
+            Calculate(latitude, longitude, altitude, date.Value);
+        }
+        catch(Exception ex)
+        {
+            throw new GeomagnetismException(ex.Message, ex);
+        }
     }
 
     public double GetTrueDirection(double magneticDirection)
     {
-        if (magneticDirection >= 360 || magneticDirection < 0) throw new ArgumentOutOfRangeException(nameof(magneticDirection));
+        if (magneticDirection >= 360 || magneticDirection < 0) throw new GeomagnetismException("Magnetic Direction is out of range.  Valid values are greater than 0 and less than 360");
 
         var trueNorth = magneticDirection + Declination;
 
