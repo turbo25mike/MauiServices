@@ -90,6 +90,7 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public void DisconnectDevice()
     {
+        if (_ConnectedPeripheral is null) return;
         _Adapter.CancelPeripheralConnection(_ConnectedPeripheral);
         DisposeConnectedDevice();
     }
