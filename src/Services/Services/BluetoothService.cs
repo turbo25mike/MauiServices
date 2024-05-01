@@ -6,7 +6,7 @@ public interface IBluetoothService
 {
     IConnectedDevice ConnectedDevice { get; }
     void Stop();
-    void Scan(string[] uuids = null, int? manufacturerID = null);
+    void Scan(string[]? uuids = null, int? manufacturerID = null);
     void ConnectTo(string deviceID);
     Task StartNotifying(string service, string characteristic);
     void StopNotifying(string service, string characteristic);
@@ -14,11 +14,11 @@ public interface IBluetoothService
     Task<IBLERequest> Write(IBLERequest request);
     Task<IBLERequest> Read(IBLERequest request);
     void DisconnectDevice();
-    event EventHandler<EventDataArgs<Packet>> PacketDiscovered;
-    event EventHandler<EventDataArgs<BLEDeviceStatus>> DeviceConnectionStatus;
-    event EventHandler<EventArgs> Stopped;
-    event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>> NotificationReceived;
-    event EventHandler<EventArgs> BluetoothStateChanged;
+    event EventHandler<EventDataArgs<Packet>>? PacketDiscovered;
+    event EventHandler<EventDataArgs<BLEDeviceStatus>>? DeviceConnectionStatus;
+    event EventHandler<EventArgs>? Stopped;
+    event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>>? NotificationReceived;
+    event EventHandler<EventArgs>? BluetoothStateChanged;
     bool IsScanning { get; }
     bool HasAccess { get; }
     bool IsPoweredOn { get; }
@@ -43,7 +43,7 @@ public class BluetoothService : IBluetoothService
     /// </summary>
     public void Stop() => _Adapter.StopScanningForDevices();
 
-    public void Scan(string[] uuids = null, int? manufacturerID = null)
+    public void Scan(string[]? uuids = null, int? manufacturerID = null)
     {
         _Adapter.StartScanningForDevices(uuids, manufacturerID);
 
@@ -57,33 +57,45 @@ public class BluetoothService : IBluetoothService
     
     public async Task<int> RequestMTU(int size)
     {
+        if (ConnectedDevice is null) throw new ArgumentOutOfRangeException("Connected device is null.");
         var result = await ConnectedDevice.RequestMTU(size);
         return (int)result;
     }
 
-    public Task<IBLERequest> Write(IBLERequest request) => ConnectedDevice.Write(request);
+    public Task<IBLERequest> Write(IBLERequest request) => ConnectedDevice?.Write(request) ?? HandleConnectionError(request);
 
-    public Task<IBLERequest> Read(IBLERequest request) => ConnectedDevice.Read(request);
+    public Task<IBLERequest> Read(IBLERequest request) => ConnectedDevice?.Read(request) ?? HandleConnectionError(request);
 
-    public async Task StartNotifying(string service, string characteristic) => await ConnectedDevice.StartNotifying(service, characteristic);
+    public async Task StartNotifying(string service, string characteristic)
+    {
+        if (ConnectedDevice != null)
+            await ConnectedDevice.StartNotifying(service, characteristic);
+    }
+
+    private Task<IBLERequest> HandleConnectionError(IBLERequest request)
+    {
+        request.SetError("Connected device is null.");
+        return Task.FromResult(request);
+    }
     
-    private void ConnectedDevice_CharacteristicChanged(object sender, EventDataArgs<Tuple<string, string, byte[]>> e)
+    private void ConnectedDevice_CharacteristicChanged(object? sender, EventDataArgs<Tuple<string, string, byte[]>> e)
     {
         NotificationReceived?.Invoke(this, e);
     }
 
-    public void StopNotifying(string service, string characteristic) => ConnectedDevice.StopNotifying(service, characteristic);
+    public void StopNotifying(string service, string characteristic) => ConnectedDevice?.StopNotifying(service, characteristic);
 
     #endregion
 
     #region Private Methods
 
-    private void Adapter_DeviceConnectionStatus(object sender, EventDataArgs<BLEDeviceStatus> e)
+    private void Adapter_DeviceConnectionStatus(object? sender, EventDataArgs<BLEDeviceStatus> e)
     {
         switch (e.Data)
         {
             case BLEDeviceStatus.Connected:
                 Debug.WriteLine($"BluetoothService->Adapter_DeviceConnectionStatus: Connected");
+                if (ConnectedDevice is null) throw new ArgumentOutOfRangeException("Connected device is null.");
                 ConnectedDevice.CharacteristicChanged -= ConnectedDevice_CharacteristicChanged;
                 ConnectedDevice.CharacteristicChanged += ConnectedDevice_CharacteristicChanged;
                 if (ConnectedDevice.GattReady)
@@ -107,7 +119,7 @@ public class BluetoothService : IBluetoothService
         DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
     }
 
-    private void DeviceDiscovered(object sender, EventDataArgs<Packet> e) => PacketDiscovered?.Invoke(this, e);
+    private void DeviceDiscovered(object? sender, EventDataArgs<Packet> e) => PacketDiscovered?.Invoke(this, e);
 
     //Specific to Android
     //Android bubbles an event through the BLEBroadcastReciever
@@ -115,19 +127,19 @@ public class BluetoothService : IBluetoothService
 
     //Specific to iOS
     //iOS bubbles an event through the BLEAdapter
-    private void Adapter_BluetoothStateChanged(object sender, EventArgs e) => BluetoothStateChanged?.Invoke(this, new EventArgs());
+    private void Adapter_BluetoothStateChanged(object? sender, EventArgs e) => BluetoothStateChanged?.Invoke(this, new EventArgs());
 
     #endregion
 
     #region Properties
 
-    public IConnectedDevice ConnectedDevice => _Adapter.ConnectedDevice;
+    public IConnectedDevice? ConnectedDevice => _Adapter.ConnectedDevice;
 
-    public event EventHandler<EventDataArgs<Packet>> PacketDiscovered;
-    public event EventHandler<EventArgs> Stopped;
-    public event EventHandler<EventArgs> BluetoothStateChanged;
-    public event EventHandler<EventDataArgs<BLEDeviceStatus>> DeviceConnectionStatus;
-    public event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>> NotificationReceived;
+    public event EventHandler<EventDataArgs<Packet>>? PacketDiscovered;
+    public event EventHandler<EventArgs>? Stopped;
+    public event EventHandler<EventArgs>? BluetoothStateChanged;
+    public event EventHandler<EventDataArgs<BLEDeviceStatus>>? DeviceConnectionStatus;
+    public event EventHandler<EventDataArgs<Tuple<string, string, byte[]>>>? NotificationReceived;
     public bool IsScanning => _Adapter.IsScanning;
     public bool HasAccess => _Adapter.CanAccess;
     public bool IsPoweredOn => _Adapter.IsPoweredOn;

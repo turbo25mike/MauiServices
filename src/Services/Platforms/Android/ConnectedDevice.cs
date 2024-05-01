@@ -201,7 +201,7 @@ public class ConnectedDevice : IConnectedDevice
         await Task.Delay(250);
     }
 
-    private void _GattCallback_CharacteristicChanged(object sender, CharacteristicEventArgs e) //notification response
+    private void _GattCallback_CharacteristicChanged(object? sender, CharacteristicEventArgs e) //notification response
     {
         CharacteristicChanged?.Invoke(this, new(new(e.Characteristic.Service.Uuid.ToString(), e.Characteristic.Uuid.ToString(), e.Data)));
     }

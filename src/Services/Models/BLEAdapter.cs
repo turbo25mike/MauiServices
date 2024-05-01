@@ -9,7 +9,7 @@ public partial class BLEAdapter : IBluetoothAdapter
 #elif __ANDROID__
 #elif WINDOWS
 #else
-    public IConnectedDevice ConnectedDevice => throw new NotImplementedException();
+    public IConnectedDevice? ConnectedDevice => throw new NotImplementedException();
 
     public bool IsScanning => throw new NotImplementedException();
 

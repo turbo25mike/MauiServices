@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Reflection.PortableExecutable;
 using CoreBluetooth;
 using Foundation;
 
@@ -28,8 +27,8 @@ public class ConnectedDevice : IConnectedDevice
         _Device.DiscoveredCharacteristics -= CharacteristicsDiscovered;
         _Device.UpdatedCharacterteristicValue -= CharacterteristicValueUpdated;
     }
-    
-    private void ServiceDiscovered(object sender, NSErrorEventArgs e)
+
+    private void ServiceDiscovered(object? sender, NSErrorEventArgs e)
     {
         if (_Device.Services == null) return;
         Debug.WriteLine($"ConnectedDevice: Service(s) {_Device.Services.Length} Discovered");
@@ -41,7 +40,7 @@ public class ConnectedDevice : IConnectedDevice
         }
     }
 
-    private void CharacteristicsDiscovered(object sender, CBServiceEventArgs e)
+    private void CharacteristicsDiscovered(object? sender, CBServiceEventArgs e)
     {
         try
         {
@@ -176,7 +175,7 @@ public class ConnectedDevice : IConnectedDevice
         var ch = GetCharacteristic(cbIDString, characteristicID);
         if (ch == null)
             return Task.FromException(new ArgumentNullException($"ConnectedDevice->Read: Service: {serviceID} - CharId: {characteristicID} not found."));
-        
+
         Debug.WriteLine("ConnectedDevice: Read - setting up read response");
 
         _Device.UpdatedCharacterteristicValue += CharacterteristicValueUpdated;
@@ -184,10 +183,10 @@ public class ConnectedDevice : IConnectedDevice
         return Task.CompletedTask; //this is due to android needing to pause after the notifications are set.
     }
 
-    private void CharacterteristicValueUpdated(object sender, CBCharacteristicEventArgs e)
+    private void CharacterteristicValueUpdated(object? sender, CBCharacteristicEventArgs e)
     {
         Debug.WriteLine($"ConnectedDevice: Notification->CharacterteristicValueUpdated");
-        CharacteristicChanged?.Invoke(this, new (new (e.Characteristic.Service.UUID.ToString(true), e.Characteristic.UUID.ToString(true), e.Characteristic.Value?.ToArray())));
+        CharacteristicChanged?.Invoke(this, new(new(e.Characteristic.Service.UUID.ToString(true), e.Characteristic.UUID.ToString(true), e.Characteristic.Value?.ToArray())));
     }
 
     public void StopNotifying(string serviceID, string characteristicID)
