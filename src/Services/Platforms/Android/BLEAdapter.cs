@@ -179,7 +179,17 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
     public void DisconnectDevice()
     {
         if (ConnectedDevice != null)
-            _ConnectedDeviceGatt?.Disconnect();
+        {
+            if (_Adapter is null || _Adapter.State == State.Off)
+            {
+                _ConnectedDeviceGatt = null;
+                ConnectedDevice = null;
+            }
+            else
+            {
+                _ConnectedDeviceGatt?.Disconnect();
+            }
+        }
     }
 
     #endregion
