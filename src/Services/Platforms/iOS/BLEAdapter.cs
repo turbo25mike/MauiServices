@@ -168,9 +168,9 @@ public partial class BLEAdapter : IBluetoothAdapter
             StopAdvertising();
     }
 
-    public Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
+    public bool StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {
-        if (IsScanning) return Task.FromResult(true);
+        if (IsScanning) return true;
 
         AddPeripherals(uuids);
 
@@ -192,13 +192,13 @@ public partial class BLEAdapter : IBluetoothAdapter
 #else
 			    _central.ScanForPeripherals (serviceUuids:null);
 #endif
-            return Task.FromResult(true);
+            return true;
         }
         else
         {
             IsScanning = false;
             Debug.WriteLine("BLEAdapter: Bluetooth is Disabled.");
-            return Task.FromResult(false);
+            return false;
         }
     }
 

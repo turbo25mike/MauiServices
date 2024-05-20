@@ -6,7 +6,7 @@ public interface ILocationService
 {
     void Start(int interval = 10, LocationFilterType filter = LocationFilterType.AVERAGE);
     void Stop();
-    Task<Location> Get();
+    Task<Location?> Get();
     void SetInterval(int interval);
     void SetFilter(LocationFilterType filter);
     void SetPosition(Pin position);
@@ -17,7 +17,7 @@ public interface ILocationService
     double ToRadians(double v);
     double ToDegrees(double v);
     double GetAngle(Location location1, Location location2);
-    Location Current { get; }
+    Location? Current { get; }
     LocationFilterType FilterType { get; }
 }
 
@@ -124,7 +124,7 @@ public class LocationService : ILocationService
     public double ToRadians(double v) => v * Math.PI / 180;
     public double ToDegrees(double v) => v * 180 / Math.PI;
 
-    public async Task<Location> Get()
+    public async Task<Location?> Get()
     {
         try
         {
@@ -161,9 +161,9 @@ public class LocationService : ILocationService
 
     #region Properties
 
-    public event EventHandler<LocationEventArgs> LocationUpdate;
+    public event EventHandler<LocationEventArgs>? LocationUpdate;
     public LocationFilterType FilterType { get; private set; }
-    public Location Current { get; private set; }
+    public Location? Current { get; private set; }
 
     private readonly int _DefaultTimerInterval = 10;
     private readonly Timer _Timer;
@@ -175,6 +175,6 @@ public class LocationService : ILocationService
 
 public class LocationEventArgs : EventArgs
 {
-    public Location Position { get; private set; }
-    public LocationEventArgs(Location d) => Position = d;
+    public Location? Position { get; private set; }
+    public LocationEventArgs(Location? d) => Position = d;
 }

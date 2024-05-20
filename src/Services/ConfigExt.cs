@@ -5,9 +5,9 @@ namespace Turbo.Maui.Services;
 public static class ConfigExt
 {
 #if ANDROID
-    private static BLEBroadcastReceiver rec;
+    private static BLEBroadcastReceiver rec = new BLEBroadcastReceiver();
 #endif
-    public static MauiAppBuilder UseTurboMauiServices(this MauiAppBuilder builder, Auth0Service.Options options = null)
+    public static MauiAppBuilder UseTurboMauiServices(this MauiAppBuilder builder, Auth0Service.Options? options = null)
     {
         builder.Services.AddSingleton<IKeyService, KeyService>();
         builder.Services.AddSingleton<IBluetoothAdapter, BLEAdapter>();
@@ -23,7 +23,6 @@ public static class ConfigExt
         builder.ConfigureLifecycleEvents(events =>
          {
              events.AddAndroid(android => android
-                 .OnCreate((activity, bundle) => rec = new BLEBroadcastReceiver())
                  .OnResume((activity) => BroadcastReceiverUtil.Register(rec, activity, new Android.Content.IntentFilter(Android.Bluetooth.BluetoothAdapter.ActionStateChanged)))
                  .OnStop((activity) => BroadcastReceiverUtil.Unregister(rec, activity))
              );

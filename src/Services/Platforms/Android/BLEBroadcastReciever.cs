@@ -20,9 +20,10 @@ public static class BroadcastReceiverUtil
 [BroadcastReceiver(Enabled = true, Exported = false)]
 public class BLEBroadcastReceiver : BroadcastReceiver
 {
-    public override void OnReceive(Context context, Intent intent)
+    public override void OnReceive(Context? context, Intent? intent)
     {
-        // Do stuff here.
+        if (intent is null) return;
+
         var action = intent.Action;
         if (action == BluetoothAdapter.ActionStateChanged)
         {

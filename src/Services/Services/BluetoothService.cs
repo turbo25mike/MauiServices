@@ -53,7 +53,7 @@ public class BluetoothService : IBluetoothService
 
     public void Scan(string[]? uuids = null, int? manufacturerID = null)
     {
-        _Adapter.StartScanningForDevices(uuids, manufacturerID);
+        _Adapter.StartScanningForDevices(uuids ?? Array.Empty<string>(), manufacturerID);
 
         if (!_Adapter.IsScanning)
             Stopped?.Invoke(this, new());
@@ -142,7 +142,7 @@ public class BluetoothService : IBluetoothService
     #endregion
 
     #region Properties
-
+    
     public IConnectedDevice? ConnectedDevice => _Adapter.ConnectedDevice;
 
     public event EventHandler<EventDataArgs<Packet>>? PacketDiscovered;

@@ -5,9 +5,9 @@ namespace Turbo.Maui.Services.Models;
 public partial class Packet : ObservableObject
 {
     [ObservableProperty]
-    private string _ID;
+    private string _ID = "";
     [ObservableProperty]
-    private string _Name;
+    private string _Name = "";
     [ObservableProperty]
     private int _RSSI;
     [ObservableProperty]
@@ -24,6 +24,6 @@ public partial class Packet : ObservableObject
         }
     }
 
-    public byte[] ServiceData { get; set; }
-    public byte[] ManufacturerData { get; set; }
+    public byte[] ServiceData { get; set; } = Array.Empty<byte>();
+    public byte[] ManufacturerData { get; set; } = Array.Empty<byte>();
 }

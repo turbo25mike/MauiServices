@@ -46,11 +46,11 @@ public class CompassService : ICompassService
         }
     }
 
-    public event EventHandler<CompassEventArgs> HeadingUpdate;
+    public event EventHandler<CompassEventArgs>? HeadingUpdate;
     public double HeadingMagneticNorth { get; private set; }
 
     const double _AccuracyLimit = 0.001;
-    SensorSpeed _Speed = SensorSpeed.UI;
+    readonly SensorSpeed _Speed = SensorSpeed.UI;
 }
 
 public class CompassEventArgs : EventArgs

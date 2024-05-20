@@ -45,6 +45,7 @@ public class ConnectedDevice : IConnectedDevice
         callback =
         (s, e) =>
         {
+            if (e.Characteristic.Service?.Uuid is null || e.Characteristic.Uuid is null) return;
             Debug.WriteLine($"ConnectedDevice->Write({id}) - Written Response - s: {e.Characteristic.Service.Uuid} c: {e.Characteristic.Uuid}");
             if (request.ServiceID.Equals(e.Characteristic.Service.Uuid.ToString(), StringComparison.CurrentCultureIgnoreCase) && request.CharacteristicID.Equals(e.Characteristic.Uuid.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
@@ -135,8 +136,9 @@ public class ConnectedDevice : IConnectedDevice
         callback =
         (s, e) =>
         {
+            if (e.Characteristic.Service is null || e.Characteristic.Uuid is null) return;
             Debug.WriteLine($"ConnectedDevice->Read - Response");
-            if (request.ServiceID.Equals(e.Characteristic.Service.Uuid.ToString(), StringComparison.CurrentCultureIgnoreCase) && request.CharacteristicID.Equals(e.Characteristic.Uuid.ToString(), StringComparison.CurrentCultureIgnoreCase))
+            if (request.ServiceID.Equals(e.Characteristic.Service.Uuid?.ToString() ?? "", StringComparison.CurrentCultureIgnoreCase) && request.CharacteristicID.Equals(e.Characteristic.Uuid.ToString(), StringComparison.CurrentCultureIgnoreCase))
             {
                 ct.Dispose();
                 _GattCallback.CharacteristicRead -= callback;
@@ -203,6 +205,7 @@ public class ConnectedDevice : IConnectedDevice
 
     private void _GattCallback_CharacteristicChanged(object? sender, CharacteristicEventArgs e) //notification response
     {
+        if (e.Characteristic.Service?.Uuid is null || e.Characteristic.Uuid is null) return;
         CharacteristicChanged?.Invoke(this, new(new(e.Characteristic.Service.Uuid.ToString(), e.Characteristic.Uuid.ToString(), e.Data)));
     }
 

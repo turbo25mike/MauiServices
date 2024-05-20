@@ -9,18 +9,18 @@ namespace Turbo.Maui.Services.Models
         public HttpResponse(HttpResponseMessage r)
         {
             WasSuccessful = r.IsSuccessStatusCode;
-            ReasonPhrase = r.ReasonPhrase;
+            ReasonPhrase = r.ReasonPhrase ?? "";
             StatusCode = r.StatusCode;
         }
 
         public bool WasSuccessful { get; set; }
         public HttpStatusCode StatusCode { get; set; }
-        public string ReasonPhrase { get; set; }
+        public string ReasonPhrase { get; set; } = "";
     }
 
     public class HttpResponseData<T> : HttpResponse
     {
-        public T Data { get; set; }
+        public T? Data { get; set; }
 
         public static async Task<HttpResponseData<T>> Create(HttpResponseMessage r)
         {

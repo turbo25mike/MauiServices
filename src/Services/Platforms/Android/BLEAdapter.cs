@@ -30,7 +30,7 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
     /// <param name="uuids">Service IDs for devices.  Null searches for all devices but doesn't work in the app goes into the background.</param>
     /// <param name="manufacturerID">Required in Android to gather manufacturer data.</param>
     /// <returns></returns>
-    public async Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
+    public bool StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {
         try
         {
@@ -98,7 +98,7 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
 
             System.Diagnostics.Debug.WriteLine("OnScanResult");
             if (result?.Device is null) return;
-            if (_DevicesFound != null && result.Device != null && result.Device.Address != null)
+            if (_DevicesFound != null && result.Device.Address != null)
             {
                 if (result.Device != null && _DevicesFound.ContainsKey(result.Device.Address))
                     _DevicesFound[result.Device.Address] = result.Device;
@@ -129,7 +129,7 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
                 }
             }
 
-            var device = new Packet { Name = result.Device?.Name, ID = result.Device?.Address, TxPower = result.ScanRecord?.TxPowerLevel ?? 0, ServiceData = sdData.ToArray(), ManufacturerData = mdData.ToArray(), RSSI = result.Rssi };
+            var device = new Packet { Name = result.Device?.Name ?? "", ID = result.Device?.Address ?? "", TxPower = result.ScanRecord?.TxPowerLevel ?? 0, ServiceData = sdData.ToArray(), ManufacturerData = mdData.ToArray(), RSSI = result.Rssi };
             DeviceDiscovered?.Invoke(this, new(device));
         }
         catch (Exception ex)
@@ -172,6 +172,7 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
             };
             callback.ServicesDiscovered += (s, e) =>
             {
+                if (_ConnectedDeviceGatt is null) throw new ArgumentNullException("ConnectedDevice");
                 ConnectedDevice = new ConnectedDevice(address, d, _ConnectedDeviceGatt, callback);
                 DeviceConnectionStatus?.Invoke(this, new(BLEDeviceStatus.Connected));
             };

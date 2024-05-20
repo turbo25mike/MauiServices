@@ -26,7 +26,7 @@ public interface IWebService
 
 public class WebService : IWebService
 {
-    public WebService(IKeyService key, IHttpHandler client = null) { _KeyService = key; _Client = client ?? new HttpClientHandler(); }
+    public WebService(IKeyService key, IHttpHandler? client = null) { _KeyService = key; _Client = client ?? new HttpClientHandler(); }
 
     #region Public Methods
 
@@ -50,7 +50,7 @@ public class WebService : IWebService
         return new HttpResponseData<long>()
         {
             Data = long.Parse(lengthString),
-            ReasonPhrase = response.ReasonPhrase,
+            ReasonPhrase = response.ReasonPhrase ?? "",
             StatusCode = response.StatusCode,
             WasSuccessful = response.IsSuccessStatusCode
         };
@@ -70,7 +70,7 @@ public class WebService : IWebService
         return new HttpResponseData<DateTime>()
         {
             Data = response.Content.Headers.LastModified?.UtcDateTime ?? DateTime.MinValue,
-            ReasonPhrase = response.ReasonPhrase,
+            ReasonPhrase = response.ReasonPhrase ?? "",
             StatusCode = response.StatusCode,
             WasSuccessful = response.IsSuccessStatusCode
         };
@@ -101,7 +101,7 @@ public class WebService : IWebService
         try
         {
             var r = await function.Invoke();
-            Log($"HttpResponse {r.StatusCode.GetHashCode()} {r.ReasonPhrase}, {r.RequestMessage.RequestUri}");
+            Log($"HttpResponse {r.StatusCode.GetHashCode()} {r.ReasonPhrase}, {r.RequestMessage?.RequestUri}");
             if (!r.IsSuccessStatusCode) throw new ArgumentOutOfRangeException();
             return new HttpResponse(r);
         }
@@ -139,7 +139,13 @@ public class WebService : IWebService
 
     private StringContent GetJsonContent(object obj) => new(GetJson(obj), Encoding.UTF8, "application/json");
 
-    private static string GetJson(object obj) => obj.GetType() == typeof(string) ? obj.ToString() : JsonSerializer.Serialize(obj);
+    private static string GetJson(object obj)
+    {
+        if (obj is null) return "";
+        if (obj.GetType() == typeof(string))
+            return obj.ToString() ?? "";
+        return JsonSerializer.Serialize(obj);
+    }
 
     private bool IsSimple(Type type)
     {

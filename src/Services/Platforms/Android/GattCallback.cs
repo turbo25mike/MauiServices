@@ -61,6 +61,7 @@ public class GattCallback : BluetoothGattCallback
     public override void OnCharacteristicWrite(BluetoothGatt? gatt, BluetoothGattCharacteristic? characteristic, GattStatus status)
     {
         base.OnCharacteristicWrite(gatt, characteristic, status);
+        if (characteristic is null) return;
         CharacteristicWrite?.Invoke(this, new(characteristic, status));
         //Console.WriteLine($"GattCallback->OnCharacteristicWrite");
     }

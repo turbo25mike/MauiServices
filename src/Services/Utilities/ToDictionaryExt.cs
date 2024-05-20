@@ -17,7 +17,7 @@ internal static class ToDictionaryExtension
     internal static IDictionary<string, T> ToDictionary<T>(this object source)
     {
         if (source == null)
-            ThrowExceptionWhenSourceArgumentIsNull();
+            throw new ArgumentNullException("source", "Unable to convert object to a dictionary. The source object is null.");
 
         var dictionary = new Dictionary<string, T>();
         foreach (PropertyDescriptor property in TypeDescriptor.GetProperties(source))
@@ -32,23 +32,11 @@ internal static class ToDictionaryExtension
         dict[propName] = propVal;
     }
 
-    private static void AddPropertyToDictionary<T>(PropertyDescriptor property, object source,
-        Dictionary<string, T> dictionary)
+    private static void AddPropertyToDictionary<T>(PropertyDescriptor property, object source, Dictionary<string, T> dictionary)
     {
         var value = property.GetValue(source);
-        if (IsOfType<T>(value))
+        if (value is not null and T)
             dictionary.Add(property.Name, (T)value);
-    }
-
-    private static bool IsOfType<T>(object value)
-    {
-        return value is T;
-    }
-
-    private static void ThrowExceptionWhenSourceArgumentIsNull()
-    {
-        throw new ArgumentNullException("source",
-            "Unable to convert object to a dictionary. The source object is null.");
     }
 }
 

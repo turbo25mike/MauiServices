@@ -20,13 +20,37 @@ public class KeyService : IKeyService
         //    SetEnvironment(env);
     }
 
-    public void AddKey(string name, object value) => _CurrentEnvironment.AddKey(name, value);
-    public void AddKeys(Dictionary<string, object> keys) => _CurrentEnvironment.AddKeys(keys);
-    public bool RemoveKey(string name) => _CurrentEnvironment.RemoveKey(name);
-    public T GetKey<T>(string name) => _CurrentEnvironment.GetKey<T>(name);
+    public void AddKey(string name, object value)
+    {
+        if(_CurrentEnvironment is null)
+            throw new ArgumentNullException("Current Environment");
+        _CurrentEnvironment.AddKey(name, value);
+    }
+    public void AddKeys(Dictionary<string, object> keys)
+    {
+        if (_CurrentEnvironment is null)
+            throw new ArgumentNullException("Current Environment");
+        _CurrentEnvironment.AddKeys(keys);
+    }
+    public bool RemoveKey(string name)
+    {
+        if (_CurrentEnvironment is null)
+            throw new ArgumentNullException("Current Environment");
+        return _CurrentEnvironment.RemoveKey(name);
+    }
+    public T GetKey<T>(string name)
+    {
+        if (_CurrentEnvironment is null)
+            throw new ArgumentNullException("Current Environment");
+        return _CurrentEnvironment.GetKey<T>(name);
+    }
     public string[] GetEnvironmentNames() => _Environments.Select((x) => x.Environment).ToArray();
 
-    public void SetEnvironment(DefaultEnvironments env) => SetEnvironment(Enum.GetName(env));
+    public void SetEnvironment(DefaultEnvironments env)
+    {
+        var envName = Enum.GetName(env) ?? throw new ArgumentNullException("Environment not found");
+        SetEnvironment(envName);
+    }
     public void SetEnvironment(string envName)
     {
         CurrentEnvironmentName = envName;
@@ -34,12 +58,12 @@ public class KeyService : IKeyService
         if (env == null) _Environments.Add(new KeyVault(envName));
     }
 
-    public string CurrentEnvironmentName { get; private set; }
+    public string CurrentEnvironmentName { get; private set; } = "";
 
     public enum DefaultEnvironments { DEBUG, TEST, PRODUCTION }
 
-    private KeyVault _CurrentEnvironment => _Environments.FirstOrDefault((e) => e.Environment == CurrentEnvironmentName);
-    private List<KeyVault> _Environments = new List<KeyVault>();
+    private KeyVault? _CurrentEnvironment => _Environments?.FirstOrDefault((e) => e.Environment == CurrentEnvironmentName) ?? null;
+    private List<KeyVault> _Environments = new();
 }
 
 public class KeyVault

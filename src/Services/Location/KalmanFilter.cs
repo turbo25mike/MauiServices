@@ -20,7 +20,7 @@ public class KalmanFilter : ILocationFilter
             Predict(measurement.Timestamp.DateTime);
 
         // If the measurement is accurate enough, that we will use it to derive a more accurate updated estimate
-        if (measurement.Accuracy.Value >= 0)
+        if (measurement.Accuracy != null && measurement.Accuracy >= 0 && _LocationEstimate != null)
         {
             var estimate = _LocationEstimate;
             updatedEstimate = Correct(measurement, estimate);
@@ -32,7 +32,7 @@ public class KalmanFilter : ILocationFilter
 
     private Location InitialEstimate(Location measurement)
     {
-        _Variance = Math.Pow(measurement.Accuracy.Value, 2);
+        _Variance = Math.Pow(measurement.Accuracy ?? 0, 2);
         _LocationEstimate = measurement;
         return measurement;
     }
@@ -58,7 +58,7 @@ public class KalmanFilter : ILocationFilter
     private Location Correct(Location measurement, Location estimate)
     {
         // Kalman gain matrix gainMatrix = Covariance / (Covariance + MeasurementVariance)
-        var gain = _Variance / (_Variance + Math.Pow(measurement.Accuracy.Value, 2) + _Epsilon);
+        var gain = _Variance / (_Variance + Math.Pow(measurement.Accuracy ?? 0, 2) + _Epsilon);
 
         // New covariance matrix is (IdentityMatrix - GainMatrix) * Covariance
         _Variance = (1 - gain) * _Variance;
@@ -81,7 +81,7 @@ public class KalmanFilter : ILocationFilter
     readonly double _TimeUncertainty;
 
     /// Internal location estimate used to perform filter computations
-    private Location _LocationEstimate;
+    private Location? _LocationEstimate;
 
     /// Covariance matrix (one-dimensional) used in computations
     private double _Variance = 0;

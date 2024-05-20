@@ -8,17 +8,17 @@ public interface IAuth0Service
 {
     IdentityModel.OidcClient.Browser.IBrowser Browser { get; }
     Task<LoginResult> Login();
-    void Update(Auth0Service.Options options);
+    void Update(Auth0Service.Options? options);
 }
 
 public class Auth0Service : IAuth0Service
 {
-    public Auth0Service(Options options)
+    public Auth0Service(Options? options)
     {
         Update(options);
     }
 
-    public void Update(Options options)
+    public void Update(Options? options)
     {
         if (options is null) return;
         _OidcClient = new OidcClient(new OidcClientOptions
@@ -34,30 +34,36 @@ public class Auth0Service : IAuth0Service
 
     public IdentityModel.OidcClient.Browser.IBrowser Browser
     {
-        get => _OidcClient.Options.Browser;
-        private set => _OidcClient.Options.Browser = value;
+        get
+        {
+            if (_OidcClient is null) throw new ArgumentNullException("OIDC Client can not be null");
+            return _OidcClient.Options.Browser;
+        }
+        private set
+        {
+            if (_OidcClient is null) throw new ArgumentNullException("OIDC Client can not be null");
+            _OidcClient.Options.Browser = value;
+        }
     }
 
     public async Task<LoginResult> Login()
     {
-
-        LoginRequest loginRequest = null;
-
-        if (!string.IsNullOrEmpty(_APIaudience))
-        {
-            loginRequest = new LoginRequest
+        if (_OidcClient is null) throw new ArgumentNullException("OIDC Client can not be null");
+        if (_APIaudience is null) throw new ArgumentNullException("API audience can not be null");
+        
+        var loginRequest = new LoginRequest
             {
                 FrontChannelExtraParameters = new Parameters(new Dictionary<string, string>()
                 {
                   { "audience", _APIaudience }
                 })
             };
-        }
         return await _OidcClient.LoginAsync(loginRequest);
     }
 
     public async Task<BrowserResult> LogoutAsync()
     {
+        if (_OidcClient is null) throw new ArgumentNullException("OIDC Client can not be null");
         var logoutRequest = new LogoutRequest();
         var endSessionUrl = new RequestUrl($"{_OidcClient.Options.Authority}/v2/logout")
           .Create(new Parameters(new Dictionary<string, string>
@@ -74,8 +80,8 @@ public class Auth0Service : IAuth0Service
         return await _OidcClient.Options.Browser.InvokeAsync(browserOptions);
     }
 
-    private OidcClient _OidcClient;
-    private string _APIaudience;
+    private OidcClient? _OidcClient;
+    private string? _APIaudience;
 
     public class Options
     {

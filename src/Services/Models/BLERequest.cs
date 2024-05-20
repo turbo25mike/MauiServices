@@ -37,7 +37,7 @@ public class BLERequest : IBLERequest
     public string CharacteristicID { get; private set; }
     public byte[] Data { get; private set; }
     public bool WithResponse { get; private set; }
-    public byte[] Response { get; private set; }
+    public byte[] Response { get; private set; } = Array.Empty<byte>();
     public bool WasSuccessful { get; private set; }
-    public string Error { get; private set; }
+    public string Error { get; private set; } = "";
 }

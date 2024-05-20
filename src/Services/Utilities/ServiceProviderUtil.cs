@@ -2,7 +2,11 @@
 
 public static class ServiceProviderUtil
 {
-    public static TService GetService<TService>() => Current.GetService<TService>();
+    public static TService? GetService<TService>()
+    {
+        if (Current is null) throw new ArgumentNullException("IServiceProvider");
+        return Current.GetService<TService>();
+    }
 
-    public static IServiceProvider Current => IPlatformApplication.Current.Services;
+    public static IServiceProvider? Current => IPlatformApplication.Current?.Services ?? null;
 }

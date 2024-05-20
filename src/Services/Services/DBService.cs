@@ -10,11 +10,11 @@ public interface IDBService
     Task Insert<T>(T model) where T : new();
     Task Patch<T>(string id, object data) where T : new();
     Task Patch<T>(string id, IDictionary<string, object> data) where T : new();
-    Task<T> Select<T>(int pk) where T : new();
-    Task<T> Select<T>(string pk) where T : new();
-    Task<List<T>> SelectAll<T>() where T : new();
-    Task<List<T>> SelectAll<T>(string where) where T : new();
-    Task<List<T>> Query<T>(string sql) where T : new();
+    Task<T?> Select<T>(int pk) where T : new();
+    Task<T?> Select<T>(string pk) where T : new();
+    Task<List<T>?> SelectAll<T>() where T : new();
+    Task<List<T>?> SelectAll<T>(string where) where T : new();
+    Task<List<T>?> Query<T>(string sql) where T : new();
     Task DeleteDB(params string[] explicitTables);
 }
 public class DBService : IDBService
@@ -58,8 +58,7 @@ public class DBService : IDBService
     {
         Debug.WriteLine($"Patch Record of type: {typeof(T).Name}");
         if (data == null) return;
-        var dbData = await Select<T>(id);
-
+        var dbData = await Select<T>(id) ?? throw new ArgumentNullException("DB Data");
         foreach (KeyValuePair<string, object> prop in data)
         {
             var dbProp = dbData.GetType().GetProperty(prop.Key);
@@ -70,21 +69,21 @@ public class DBService : IDBService
         if (await TableExists<T>()) await _DB.UpdateAsync(dbData);
     }
 
-    public async Task<T> Select<T>(int pk) where T : new() => await QuerySingle<T>($"Select * from {typeof(T).Name} where ID = {pk}");
+    public async Task<T?> Select<T>(int pk) where T : new() => await QuerySingle<T>($"Select * from {typeof(T).Name} where ID = {pk}");
 
-    public async Task<T> Select<T>(string pk) where T : new() => await QuerySingle<T>($"Select * from {typeof(T).Name} where ID = '{pk}'");
+    public async Task<T?> Select<T>(string pk) where T : new() => await QuerySingle<T>($"Select * from {typeof(T).Name} where ID = '{pk}'");
 
-    public async Task<List<T>> SelectAll<T>() where T : new() => await Query<T>($"Select * from {typeof(T).Name}");
+    public async Task<List<T>?> SelectAll<T>() where T : new() => await Query<T>($"Select * from {typeof(T).Name}");
 
-    public async Task<List<T>> SelectAll<T>(string where) where T : new() => await Query<T>($"Select * from {typeof(T).Name} where {where}");
+    public async Task<List<T>?> SelectAll<T>(string where) where T : new() => await Query<T>($"Select * from {typeof(T).Name} where {where}");
 
-    public async Task<List<T>> Query<T>(string sql) where T : new()
+    public async Task<List<T>?> Query<T>(string sql) where T : new()
     {
         Debug.WriteLine($"Query type: {typeof(T).Name}");
         return await TableExists<T>() ? await _DB.QueryAsync<T>(sql) : null;
     }
 
-    public async Task<T> QuerySingle<T>(string sql) where T : new()
+    public async Task<T?> QuerySingle<T>(string sql) where T : new()
     {
         var result = await Query<T>(sql);
         return (result != null) ? result.FirstOrDefault() : default;
@@ -155,14 +154,14 @@ public class DBService : IDBService
 
     private static object ConvertPropValueToSql(object val)
     {
-        if (val == null) return "NULL";
+        if (val is null) return "NULL";
         if (val is int || val is long || val is decimal) return val;
         if (val is bool v) return v ? 1 : 0;
         if (val is Array array)
         {
             var items = new List<string>();
             foreach (var o in array)
-                items.Add(ConvertPropValueToSql(o).ToString());
+                items.Add(ConvertPropValueToSql(o)?.ToString() ?? "");
             return string.Join(",", items);
         }
         if (val is DateTime time) return $"'{time.ToUniversalTime():yyyy-MM-dd HH:mm:ss}'";

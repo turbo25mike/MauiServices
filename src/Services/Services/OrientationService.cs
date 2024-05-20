@@ -49,7 +49,7 @@ public class OrientationService : IOrientationService
         }
     }
 
-    public event EventHandler<OrientationEventArgs> OrientationUpdate;
+    public event EventHandler<OrientationEventArgs>? OrientationUpdate;
 
     public Quaternion Orientation { get; private set; }
 
