@@ -19,7 +19,7 @@
 		<AssemblyName>Services</AssemblyName>
 		<PackageId>Turbo.Maui.Services</PackageId>
 		<PackageReadmeFile>ReadMe.md</PackageReadmeFile>
-		<VersionPrefix>8.3</VersionPrefix>
+		<VersionPrefix>8.3</VersionPrefix><!--minor version number is added in Github Actions-->
 		<Authors>Jeff Johnson</Authors>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
