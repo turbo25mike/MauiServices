@@ -13,4 +13,8 @@ public interface IBluetoothAdapter
     bool IsScanning { get; }
     bool IsPoweredOn { get; }
     bool CanAccess { get; }
+    bool IsAdvertising { get; }
+    void StartAdvertising(BLEAdvertisingManager manager);
+    void StopAdvertising();
+    void Notify(string serviceID, string characteristicID, string value);
 }

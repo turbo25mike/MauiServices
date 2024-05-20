@@ -10,6 +10,8 @@ public partial class BLEAdapter : IBluetoothAdapter
     public BLEAdapter()
     {
         Debug.WriteLine("BLEAdapter Init()");
+
+        _Manager = new CBPeripheralManager();
         _Adapter = new CBCentralManager(DispatchQueue.MainQueue);
 
         _Adapter.UpdatedState += _Adapter_UpdatedState;
@@ -27,6 +29,143 @@ public partial class BLEAdapter : IBluetoothAdapter
             Debug.WriteLine("BLE Disconnected");
             DisposeConnectedDevice();
         };
+    }
+
+    private BLEAdvertisingManager? _AdvertisingManager;
+
+    public void StartAdvertising(BLEAdvertisingManager manager)
+    {
+        StopAdvertising();
+        _AdvertisingManager = manager;
+        _Manager.WriteRequestsReceived += Manager_WriteRequestsReceived;
+        _Manager.ReadRequestReceived += Manager_ReadRequestReceived;
+        _Manager.CharacteristicSubscribed += Manager_CharacteristicSubscribed;
+        _Manager.CharacteristicUnsubscribed += Manager_CharacteristicUnsubscribed;
+
+        _NativeServices.AddRange(BuildServices(manager.Services));
+        if (_NativeServices.Count == 0) return;
+        var nativeServiceUUIDs = _NativeServices.Select(s => s.UUID);
+
+
+        foreach (var service in _NativeServices)
+            _Manager.AddService(service);
+
+        _Manager.StartAdvertising(new StartAdvertisingOptions() { LocalName = manager.LocalName, ServicesUUID = nativeServiceUUIDs.ToArray() });
+    }
+
+    private readonly List<CBMutableService> _NativeServices = new();
+
+    private CBMutableService[] BuildServices(BLEService[] services)
+    {
+        var sysServices = new List<CBMutableService>();
+
+        foreach (var service in services)
+        {
+            var s = new CBMutableService(CBUUID.FromString(service.UUID), service.IsPrimary);
+            var chList = new List<CBMutableCharacteristic>();
+            foreach (var characteristic in service.Characteristics)
+            {
+                var ch = new CBMutableCharacteristic(CBUUID.FromString(characteristic.UUID), ConvertProperties(characteristic.Properties), characteristic.Value is null ? null : new NSData(characteristic.Value, NSDataBase64DecodingOptions.IgnoreUnknownCharacters), ConvertPermission(characteristic.Permissions));
+                chList.Add(ch);
+            }
+            s.Characteristics = chList.ToArray();
+            sysServices.Add(s);
+        }
+        return sysServices.ToArray();
+    }
+
+    private CBCharacteristicProperties ConvertProperties(string properties) =>
+        properties switch
+        {
+            "Read" => CBCharacteristicProperties.Read,
+            "Read, Write" => CBCharacteristicProperties.Read | CBCharacteristicProperties.Write,
+            "Write" => CBCharacteristicProperties.Write,
+            "WriteWithoutResponse" => CBCharacteristicProperties.WriteWithoutResponse,
+            "Indicate" => CBCharacteristicProperties.Indicate,
+            "Notify" => CBCharacteristicProperties.Notify,
+            _ => CBCharacteristicProperties.Read
+        };
+
+    private CBAttributePermissions ConvertPermission(BLEPermissions permissions) =>
+        permissions switch
+        {
+            BLEPermissions.Readable => CBAttributePermissions.Readable,
+            BLEPermissions.Writeable => CBAttributePermissions.Writeable,
+            BLEPermissions.ReadEncryptionRequired => CBAttributePermissions.ReadEncryptionRequired,
+            BLEPermissions.WriteEncryptionRequired => CBAttributePermissions.WriteEncryptionRequired,
+            _ => CBAttributePermissions.Readable
+        };
+
+    private readonly Dictionary<CBCharacteristic, List<CBCentral>> Subscribers = new();
+
+    private void Manager_CharacteristicUnsubscribed(object? sender, CBPeripheralManagerSubscriptionEventArgs e)
+    {
+        if (_AdvertisingManager is null) throw new ArgumentNullException("AdvertisingManager must be set");
+        if (e.Characteristic.Service is null) return;
+        _AdvertisingManager.Unsubscribed(e.Central.Identifier.ToString(), e.Characteristic.Service.UUID.ToString(), e.Characteristic.UUID.ToString());
+
+        if (Subscribers.TryFirstOrDefault((ch) => ch.Key.UUID == e.Characteristic.UUID, out var found))
+            found.Value.Remove(e.Central);
+    }
+
+    private void Manager_CharacteristicSubscribed(object? sender, CBPeripheralManagerSubscriptionEventArgs e)
+    {
+        if (_AdvertisingManager is null) throw new ArgumentNullException("AdvertisingManager must be set");
+        if (e.Characteristic.Service is null) return;
+
+        _AdvertisingManager.Subscribed(e.Central.Identifier.ToString(), e.Characteristic.Service.UUID.ToString(), e.Characteristic.UUID.ToString());
+
+        if(Subscribers.TryFirstOrDefault((ch) => ch.Key.UUID == e.Characteristic.UUID, out var found))
+            found.Value.Add(e.Central);
+        else
+            Subscribers.Add(e.Characteristic, new() { e.Central });
+
+        //NSData * updatedValue = // fetch the characteristic's new value
+        //BOOL didSendValue = [myPeripheralManager updateValue: updatedValue
+        //forCharacteristic: characteristic onSubscribedCentrals: nil];
+    }    
+
+    private void Manager_WriteRequestsReceived(object? sender, CBATTRequestsEventArgs e)
+    {
+        if (_AdvertisingManager is null) throw new ArgumentNullException("AdvertisingManager must be set");
+        
+        foreach (var request in e.Requests)
+        {
+            if (request.Characteristic.Service is null) continue;
+            _AdvertisingManager.WriteRequested(request.Central.Identifier.ToString(), request.Characteristic.Service.UUID.ToString(), request.Characteristic.UUID.ToString(), request.Value?.ToString() ?? "");
+        }
+    }
+
+    private void Manager_ReadRequestReceived(object? sender, CBATTRequestEventArgs e)
+    {
+        if (_AdvertisingManager is null) throw new ArgumentNullException("AdvertisingManager must be set");
+
+        if (e.Request.Characteristic.Service is null)
+        {
+            _Manager.RespondToRequest(e.Request, CBATTError.InvalidHandle);
+            return;
+        }
+        
+        var response = _AdvertisingManager.ReadRequested(e.Request.Central.Identifier.ToString(), e.Request.Characteristic.Service.UUID.ToString(), e.Request.Characteristic.UUID.ToString());
+        e.Request.Value = response is null ? null :  NSData.FromString(response, NSStringEncoding.ASCIIStringEncoding);
+        _Manager.RespondToRequest(e.Request, CBATTError.Success);
+    }
+
+    public void Notify(string serviceID, string characteristicID, string value)
+    {
+        var service = _NativeServices.FirstOrDefault(s => string.Equals(s.UUID.ToString(), serviceID, StringComparison.CurrentCultureIgnoreCase));
+        if (service is null) return;
+        var characteristic = service.Characteristics?.FirstOrDefault(c => string.Equals(c.UUID.ToString(), characteristicID, StringComparison.CurrentCultureIgnoreCase));
+        if (characteristic is null) return;
+   
+        var didSend = _Manager.UpdateValue(NSData.FromString(value), (CBMutableCharacteristic)characteristic, null);
+                
+    }
+
+    public void StopAdvertising()
+    {
+        if (_Manager.Advertising)
+            StopAdvertising();
     }
 
     public Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
@@ -196,16 +335,18 @@ public partial class BLEAdapter : IBluetoothAdapter
     public CBManagerState GetCurrentState() => _Adapter.State;
     public bool IsPoweredOn => _Adapter.State == CBManagerState.PoweredOn;
     public bool CanAccess => _Adapter.State != CBManagerState.Unauthorized;
+    public bool IsAdvertising => _Manager.Advertising;
     public IConnectedDevice? ConnectedDevice { get; private set; }
     public event EventHandler<EventDataArgs<BLEDeviceStatus>> DeviceConnectionStatus = delegate { };
     public event EventHandler<EventDataArgs<Packet>> DeviceDiscovered = delegate { };
     public event EventHandler<EventArgs> BluetoothDisabled = delegate { };
-    public event EventHandler<EventArgs> BluetoothStateChanged;
+    public event EventHandler<EventArgs>? BluetoothStateChanged;
     public bool IsScanning { get; private set; }
 
     private List<CBUUID> _PeripheralUUIDs = new();
     bool _IsRunning; //this enables scanning to restart when the bluetooth gets turned off/on outside of the app.
     Dictionary<string, CBPeripheral> _DevicesFound = new();
     CBPeripheral? _ConnectedPeripheral;
+    private readonly CBPeripheralManager _Manager;
     readonly CBCentralManager _Adapter;
 }

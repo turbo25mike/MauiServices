@@ -20,6 +20,10 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
 
     #region Public Methods
 
+    public void StartAdvertising(BLEAdvertisingManager manager) { }
+    public void StopAdvertising() { }
+    public void Notify(string serviceID, string characteristicID, string value) { }
+
     /// <summary>
     /// Starts BLE scanning if it is not currently running.
     /// </summary>
@@ -215,6 +219,7 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
 
     public bool IsPoweredOn => _Adapter?.State == State.On;
     public bool CanAccess => _Adapter?.IsEnabled ?? false;
+    public bool IsAdvertising => false;
 
     private int? _ManufacturerID;
 
@@ -222,7 +227,7 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
 
     public event EventHandler<EventDataArgs<Packet>>? DeviceDiscovered = delegate { };
     public event EventHandler<EventDataArgs<BLEDeviceStatus>>? DeviceConnectionStatus = delegate { };
-    public event EventHandler<EventArgs> BluetoothStateChanged;
+    public event EventHandler<EventArgs>? BluetoothStateChanged;
 
     public bool IsScanning { get; set; }
 

@@ -17,6 +17,8 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public bool CanAccess => throw new NotImplementedException();
 
+    public bool IsAdvertising => throw new NotImplementedException();
+
     public void ConnectTo(string address) => throw new NotImplementedException();
 
     public void DisconnectDevice() => throw new NotImplementedException();
@@ -25,8 +27,23 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public void StopScanningForDevices() => throw new NotImplementedException();
 
-    public event EventHandler<EventDataArgs<Packet>> DeviceDiscovered;
-    public event EventHandler<EventDataArgs<BLEDeviceStatus>> DeviceConnectionStatus;
-    public event EventHandler<EventArgs> BluetoothStateChanged;
+    public void StartAdvertising(BLEAdvertisingManager manager)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void StopAdvertising()
+    {
+        throw new NotImplementedException();
+    }
+
+    public void Notify(string serviceID, string characteristicID, string value)
+    {
+        throw new NotImplementedException();
+    }
+
+    public event EventHandler<EventDataArgs<Packet>>? DeviceDiscovered;
+    public event EventHandler<EventDataArgs<BLEDeviceStatus>>? DeviceConnectionStatus;
+    public event EventHandler<EventArgs>? BluetoothStateChanged;
 #endif
 }

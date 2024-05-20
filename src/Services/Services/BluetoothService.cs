@@ -22,7 +22,11 @@ public interface IBluetoothService
     bool IsScanning { get; }
     bool HasAccess { get; }
     bool IsPoweredOn { get; }
+    bool IsAdvertising { get; }
     void StateUpdated();
+    void StartAdvertising(BLEAdvertisingManager manager);
+    void StopAdvertising();
+    void Notify(string serviceID, string characteristicID, string value);
 }
 
 public class BluetoothService : IBluetoothService
@@ -37,6 +41,10 @@ public class BluetoothService : IBluetoothService
     }
 
     #region Public Methods
+
+    public void StartAdvertising(BLEAdvertisingManager manager) => _Adapter.StartAdvertising(manager);
+
+    public void StopAdvertising() => _Adapter.StopAdvertising();
 
     /// <summary>
     /// Stops scanning for advertisements
@@ -71,6 +79,8 @@ public class BluetoothService : IBluetoothService
         if (ConnectedDevice != null)
             await ConnectedDevice.StartNotifying(service, characteristic);
     }
+
+    public void Notify(string serviceID, string characteristicID, string value) => _Adapter.Notify(serviceID, characteristicID, value);
 
     private Task<IBLERequest> HandleConnectionError(IBLERequest request)
     {
@@ -143,6 +153,7 @@ public class BluetoothService : IBluetoothService
     public bool IsScanning => _Adapter.IsScanning;
     public bool HasAccess => _Adapter.CanAccess;
     public bool IsPoweredOn => _Adapter.IsPoweredOn;
+    public bool IsAdvertising => _Adapter.IsAdvertising;
 
     readonly IBluetoothAdapter _Adapter;
 

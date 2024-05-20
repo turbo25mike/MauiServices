@@ -16,6 +16,7 @@ public interface ILocationService
     Location GetRangeCoords(double latitude, double longitude, double distance, double bearing);
     double ToRadians(double v);
     double ToDegrees(double v);
+    double GetAngle(Location location1, Location location2);
     Location Current { get; }
     LocationFilterType FilterType { get; }
 }
@@ -68,9 +69,30 @@ public class LocationService : ILocationService
     /// inclination is in degrees
     /// </summary>
     /// <param name="range"></param>
-    /// <param name="inclination"></param>
+    /// <param name="inclination">In Degrees</param>
     /// <returns></returns>
     public double GetDistance(double range, double inclination) => range * Math.Cos(ToRadians(inclination));
+
+
+    /// <summary>
+    /// Get Angle in Degrees between two locations on a map
+    /// </summary>
+    /// <param name="location1">Location</param>
+    /// <param name="location2">Location</param>
+    /// <returns></returns>
+    public double GetAngle(Location location1, Location location2)
+    {
+        var lat1 = ToRadians(location1.Latitude);
+        var lat2 = ToRadians(location2.Latitude);
+        var dlon = ToRadians(location2.Longitude - location1.Longitude);
+
+        double y = Math.Sin(dlon) * Math.Cos(lat2);
+        double x = Math.Cos(lat1) * Math.Sin(lat2) - Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(dlon);
+
+        var rads = Math.Atan2(y, x);
+        var brng = (ToDegrees(rads) + 360) % 360;
+        return brng;
+    }
 
     public Location GetRangeCoords(double latitude, double longitude, double distance, double bearing)
     {

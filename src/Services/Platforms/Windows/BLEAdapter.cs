@@ -22,9 +22,15 @@ public partial class BLEAdapter : IBluetoothAdapter
     private BluetoothLEAdvertisementWatcher? _BleWatcher;
     public bool IsPoweredOn => _Radio.State == RadioState.On;
     public bool CanAccess => _Radio.State != RadioState.Disabled;
+    public bool IsAdvertising = false;
 
     public event EventHandler<EventArgs> BluetoothStateChanged;
     public bool IsScanning { get; private set; }
+
+
+    public void StartAdvertising(BLEAdvertisingManager manager) { }
+    public void StopAdvertising() { }
+    public void Notify(string serviceID, string characteristicID, string value) { }
 
     public Task<bool> StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {

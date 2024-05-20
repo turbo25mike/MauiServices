@@ -42,16 +42,28 @@ public class Geomagnetism
         }
     }
 
+    public double GetMagDirection(double trueDirection)
+    {
+        if (trueDirection >= 360 || trueDirection < 0) throw new GeomagnetismException("True Direction is out of range.  Valid values are greater than 0 and less than 360");
+
+        var magDir = trueDirection - Declination;
+
+        if (magDir >= 359) magDir -= 360;
+        if (magDir < 0) magDir += 360;
+
+        return magDir;
+    }
+
     public double GetTrueDirection(double magneticDirection)
     {
         if (magneticDirection >= 360 || magneticDirection < 0) throw new GeomagnetismException("Magnetic Direction is out of range.  Valid values are greater than 0 and less than 360");
 
-        var trueNorth = magneticDirection + Declination;
+        var trueHeading = magneticDirection + Declination;
 
-        if (trueNorth >= 359) trueNorth -= 360;
-        if (trueNorth < 0) trueNorth += 360;
+        if (trueHeading >= 359) trueHeading -= 360;
+        if (trueHeading < 0) trueHeading += 360;
 
-        return trueNorth;
+        return trueHeading;
     }
 
     private void Init()

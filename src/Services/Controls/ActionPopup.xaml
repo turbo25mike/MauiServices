@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentView xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="Turbo.Maui.Services.ActionPopup"
+             x:Name="this"
+             BackgroundColor="{StaticResource SemiTransparent}"
+             IsVisible="{Binding Args.IsOpen, Source={x:Reference this}}">
+       
+            <Grid HorizontalOptions="CenterAndExpand" VerticalOptions="CenterAndExpand">
+                <BoxView CornerRadius="5" BackgroundColor="White" Color="White" ></BoxView>
+                <VerticalStackLayout WidthRequest="350" Padding="15" Spacing="5" >
+                    <Label Text="{Binding Args.Title, Source={x:Reference this}}" TextColor="{StaticResource Black}" HorizontalTextAlignment="Center" HorizontalOptions="Center" />
+                    <Label Text="{Binding Args.Body, Source={x:Reference this}}" TextColor="{StaticResource Black}" HorizontalTextAlignment="Center"  MinimumHeightRequest="70"/>
+                    <Button Text="{Binding Args.AcceptTitle, Source={x:Reference this}}" Clicked="AcceptButton_Clicked"  HorizontalOptions="FillAndExpand"/>
+                    <Button Text="{Binding Args.DismissTitle, Source={x:Reference this}}" Clicked="DismissButton_Clicked" BackgroundColor="DarkRed" />
+                </VerticalStackLayout>
+            </Grid>
+</ContentView>

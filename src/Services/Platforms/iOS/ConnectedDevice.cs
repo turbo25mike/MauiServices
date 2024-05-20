@@ -25,7 +25,8 @@ public class ConnectedDevice : IConnectedDevice
         if (_Device is null) return;
         _Device.DiscoveredService -= ServiceDiscovered;
         _Device.DiscoveredCharacteristics -= CharacteristicsDiscovered;
-        _Device.UpdatedCharacterteristicValue -= CharacterteristicValueUpdated;
+        _Device.UpdatedCharacterteristicValue -= Device_UpdatedCharacterteristicValue;
+
     }
 
     private void ServiceDiscovered(object? sender, NSErrorEventArgs e)
@@ -81,11 +82,11 @@ public class ConnectedDevice : IConnectedDevice
             (s, e) =>
             {
                 Debug.WriteLine($"ConnectedDevice->Write - Response");
-                if (request.ServiceID.Equals(e.Characteristic.Service.UUID.ToString(true), StringComparison.CurrentCultureIgnoreCase) && request.CharacteristicID.Equals(e.Characteristic.UUID.ToString(true), StringComparison.CurrentCultureIgnoreCase))
+                if (request.ServiceID.Equals(e.Characteristic.Service?.UUID.ToString(true) ?? "", StringComparison.CurrentCultureIgnoreCase) && request.CharacteristicID.Equals(e.Characteristic.UUID.ToString(true), StringComparison.CurrentCultureIgnoreCase))
                 {
                     ct.Dispose();
                     _Device.WroteCharacteristicValue -= withResponseCallback;
-                    request.SetResponse(e.Characteristic.Value?.ToArray());
+                    request.SetResponse(e.Characteristic.Value?.ToArray() ?? Array.Empty<byte>());
                     tcs.TrySetResult(request);
                 }
             };
@@ -108,7 +109,7 @@ public class ConnectedDevice : IConnectedDevice
                 Debug.WriteLine($"ConnectedDevice->Write - Response");
                 ct.Dispose();
                 _Device.IsReadyToSendWriteWithoutResponse -= withoutResponseCallback;
-                request.SetResponse(null);
+                request.SetResponse(Array.Empty<byte>());
                 tcs.TrySetResult(request);
             };
 
@@ -135,23 +136,23 @@ public class ConnectedDevice : IConnectedDevice
         var tcs = new TaskCompletionSource<IBLERequest>();
         var ct = new CancellationTokenSource(4000);
 
-        EventHandler<CBDescriptorEventArgs>? callback = null;
+        EventHandler<CBCharacteristicEventArgs>? callback = null;
         callback =
         (s, e) =>
         {
             Debug.WriteLine($"ConnectedDevice->Read - Response");
-            if (request.ServiceID.Equals(e.Descriptor.Characteristic.Service.UUID.ToString(), StringComparison.CurrentCultureIgnoreCase) && request.CharacteristicID.Equals(e.Descriptor.Characteristic.UUID.ToString(), StringComparison.CurrentCultureIgnoreCase))
+            if (request.ServiceID.Equals(e.Characteristic.Service?.UUID.ToString(true) ?? "", StringComparison.CurrentCultureIgnoreCase) && request.CharacteristicID.Equals(e.Characteristic.UUID.ToString(true), StringComparison.CurrentCultureIgnoreCase))
             {
                 ct.Dispose();
-                _Device.UpdatedValue -= callback;
-                request.SetResponse(e.Descriptor.Characteristic.Value?.ToArray());
+                _Device.UpdatedCharacterteristicValue -= callback;
+                request.SetResponse(e.Characteristic.Value?.ToArray() ?? Array.Empty<byte>());
                 tcs.TrySetResult(request);
             }
         };
 
         ct.Token.Register(() =>
         {
-            _Device.UpdatedValue -= callback;
+            _Device.UpdatedCharacterteristicValue -= callback;
             tcs.TrySetCanceled();
         }, useSynchronizationContext: false);
 
@@ -161,42 +162,59 @@ public class ConnectedDevice : IConnectedDevice
         if (ch == null)
             return Task.FromException<IBLERequest>(new ArgumentException($"Error - ConnectedDevice->Read: Service: {request.ServiceID} - CharId: {request.CharacteristicID} not found."));
 
-        _Device.UpdatedValue += callback;
+        _Device.UpdatedCharacterteristicValue += callback;
         _Device.ReadValue(ch);
         return tcs.Task;
     }
+
+    private readonly List<CBCharacteristic> _NotificationList = new();
 
     public Task StartNotifying(string serviceID, string characteristicID)
     {
         Debug.WriteLine($"ConnectedDevice: StartNotifying");
 
-        var cbID = CBUUID.FromString(serviceID);
-        var cbIDString = cbID.Uuid;
-        var ch = GetCharacteristic(cbIDString, characteristicID);
-        if (ch == null)
-            return Task.FromException(new ArgumentNullException($"ConnectedDevice->Read: Service: {serviceID} - CharId: {characteristicID} not found."));
+        if(!_NotificationList.TryFirstOrDefault((c)=> string.Equals(c.UUID.ToString(), characteristicID, StringComparison.CurrentCultureIgnoreCase), out var found))
+        {
+            Debug.WriteLine("ConnectedDevice: StartNotifying - setting up new notification");
+            var cbID = CBUUID.FromString(serviceID);
+            var cbIDString = cbID.Uuid;
+            var ch = GetCharacteristic(cbIDString, characteristicID);
+            if (ch == null)
+                return Task.FromException(new ArgumentNullException($"ConnectedDevice->StartNotifying: Service: {serviceID} - CharId: {characteristicID} not found."));
 
-        Debug.WriteLine("ConnectedDevice: Read - setting up read response");
+            _Device.SetNotifyValue(true, ch);
 
-        _Device.UpdatedCharacterteristicValue += CharacterteristicValueUpdated;
-        _Device.SetNotifyValue(true, ch);
+            if(_NotificationList.Count == 0)
+                _Device.UpdatedCharacterteristicValue += Device_UpdatedCharacterteristicValue;
+
+            _NotificationList.Add(ch);
+        }
+
         return Task.CompletedTask; //this is due to android needing to pause after the notifications are set.
     }
 
-    private void CharacterteristicValueUpdated(object? sender, CBCharacteristicEventArgs e)
+    private void Device_UpdatedCharacterteristicValue(object? sender, CBCharacteristicEventArgs e)
     {
-        Debug.WriteLine($"ConnectedDevice: Notification->CharacterteristicValueUpdated");
-        CharacteristicChanged?.Invoke(this, new(new(e.Characteristic.Service.UUID.ToString(true), e.Characteristic.UUID.ToString(true), e.Characteristic.Value?.ToArray())));
+        Debug.WriteLine($"ConnectedDevice: Notification->UpdatedCharacterteristicValue");
+
+        if (_NotificationList.TryFirstOrDefault((c) => c.UUID == e.Characteristic.UUID, out var found) && found != null)
+        {
+            CharacteristicChanged?.Invoke(this, new(new(e.Characteristic.Service?.UUID.ToString(true) ?? "", e.Characteristic.UUID.ToString(true), e.Characteristic.Value?.ToArray() ?? Array.Empty<byte>())));
+        }
     }
 
     public void StopNotifying(string serviceID, string characteristicID)
     {
-        _Device.UpdatedCharacterteristicValue -= CharacterteristicValueUpdated;
+        if (_NotificationList.TryFirstOrDefault((c) => string.Equals(c.UUID.ToString(true), characteristicID, StringComparison.CurrentCultureIgnoreCase), out var found) && found != null)
+        {
+            _Device.SetNotifyValue(false, found);
+            _NotificationList.Remove(found);
+        }
+
+       if (_NotificationList.Count == 0)
+            _Device.UpdatedCharacterteristicValue -= Device_UpdatedCharacterteristicValue;
 
         Debug.WriteLine($"ConnectedDevice: StopNotifying");
-        var ch = GetCharacteristic(serviceID, characteristicID);
-        if (ch == null) return;
-        _Device.SetNotifyValue(false, ch);
     }
 
     public IEnumerable<BLEService> GetServices()
@@ -217,7 +235,7 @@ public class ConnectedDevice : IConnectedDevice
         return results;
     }
 
-    public bool HasService(string serviceID) => _Device.Services?.FirstOrDefault(x => x.UUID.ToString().ToUpper() == serviceID.ToUpper()) != null;
+    public bool HasService(string serviceID) => _Device.Services?.FirstOrDefault(x => x.UUID.ToString(true).ToUpper() == serviceID.ToUpper()) != null;
 
     public bool HasCharacteristic(string serviceID, string characteristicID) => GetCharacteristic(serviceID, characteristicID) != null;
 
