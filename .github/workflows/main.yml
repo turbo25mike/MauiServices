@@ -25,7 +25,7 @@ jobs:
       - name: Build solution and generate NuGet package and Push
         run: |
           cd src/Services
-          sed -i "s/\(<VersionPrefix>\([0-9]\+\.\)\{2\}\)\([0-9]\+\)/\1${{github.run_number}}/" Turbo.Maui.Services.csproj
+          sed -i '' 's/\(<VersionPrefix>\([0-9]\+\.\)\{2\}\)\([0-9]\+\)/\1${{github.run_number}}/' Turbo.Maui.Services.csproj
           dotnet workload restore
           dotnet pack -c Release -o out
           cd out
