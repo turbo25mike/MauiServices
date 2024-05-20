@@ -34,7 +34,7 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public bool StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
     {
-        if (IsScanning) return Task.FromResult(true);
+        if (IsScanning) return true;
         if (manufacturerID != null)
             _ManufacturerIDFilter = (ushort)manufacturerID;
         AddPeripherals(uuids);
@@ -54,7 +54,7 @@ public partial class BLEAdapter : IBluetoothAdapter
         _BleWatcher.Received += OnScanResult;
         _BleWatcher.Start();
         IsScanning = true;
-        return Task.FromResult(true);
+        return true;
     }
 
     public void StopScanningForDevices()
