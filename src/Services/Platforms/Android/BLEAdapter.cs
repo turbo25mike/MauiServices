@@ -1,4 +1,5 @@
-﻿using Android.Bluetooth;
+﻿using System.Text;
+using Android.Bluetooth;
 using Android.Bluetooth.LE;
 using Android.Content;
 using Android.OS;
@@ -13,16 +14,80 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
     {
         var context = MauiApplication.Current;
         if (context.GetSystemService(Context.BluetoothService) is not BluetoothManager bluetoothManager) return;
-        _Adapter = bluetoothManager.Adapter;
-
+        _BluetoothManager = bluetoothManager;
+        _Adapter = _BluetoothManager.Adapter;
         _DevicesFound = new Dictionary<string, BluetoothDevice>();
     }
 
     #region Public Methods
 
-    public void StartAdvertising(BLEAdvertisingManager manager) { }
-    public void StopAdvertising() { }
-    public void Notify(string serviceID, string characteristicID, string value) { }
+    public void StartAdvertising(BLEAdvertisingManager manager)
+    {
+        StopAdvertising();
+
+        _Manager = new GattServerCallback();
+
+        _Server = _BluetoothManager.OpenGattServer(MauiApplication.Current, _Manager);
+        _AdvertisingManager = manager;
+
+        _Manager.CharacteristicWrite += Manager_CharacteristicWrite;
+        _Manager.CharacteristicRead += Manager_CharacteristicRead;
+        _Manager.NotificationSent += Manager_NotificationSent;
+        //_Manager.CharacteristicSubscribed += Manager_CharacteristicSubscribed;
+        //_Manager.CharacteristicUnsubscribed += Manager_CharacteristicUnsubscribed;
+
+        foreach (var service in _AdvertisingManager.Services)
+            _Server?.AddService(BuildService(service));
+    }
+
+    private void Manager_NotificationSent(object? sender, NotificationSentServerEventArgs e)
+    {
+
+    }
+
+    private void Manager_CharacteristicRead(object? sender, CharacteristicReadServerEventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void Manager_CharacteristicWrite(object? sender, CharacteristicWriteServerEventArgs e)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void StopAdvertising()
+    {
+        if (_Server is null) return;
+        _Server.Close();
+        _Server.Dispose();
+        _Server = null;
+    }
+
+    public void Notify(string serviceID, string characteristicID, string value)
+    {
+        if (_Server?.ConnectedDevices is null || _Server.Services is null) return;
+
+        if(_Server.Services.TryFirstOrDefault((s) => s.Uuid == UUID.FromString(serviceID), out var service))
+        {
+            if (service?.Characteristics is null) return;
+
+            if(service.Characteristics.TryFirstOrDefault((c) => c.Uuid == UUID.FromString(characteristicID), out var characteristic))
+            {
+                if (characteristic is null) return;
+                foreach (var d in _Server.ConnectedDevices)
+                {
+                    if (OperatingSystem.IsAndroidVersionAtLeast(33))
+                    {
+                        _Server.NotifyCharacteristicChanged(d, characteristic, false, Encoding.ASCII.GetBytes(value));
+                    }
+                    else
+                    {
+                        _Server.NotifyCharacteristicChanged(d, characteristic, false);
+                    }
+                }
+            }
+        }
+    }
 
     /// <summary>
     /// Starts BLE scanning if it is not currently running.
@@ -201,6 +266,41 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
 
     #region Private Methods
 
+    private BluetoothGattService BuildService(BLEService s)
+    {
+        var service = new BluetoothGattService(UUID.FromString(s.UUID), s.IsPrimary ? GattServiceType.Primary : GattServiceType.Secondary);
+
+        foreach (var ch in s.Characteristics)
+        {
+            var characteristic = new BluetoothGattCharacteristic(UUID.FromString(ch.UUID), ConvertProperties(ch.Properties), ConvertPermission(ch.Permissions));
+            service.AddCharacteristic(characteristic);
+        }
+
+        return service;
+    }
+
+    private GattProperty ConvertProperties(string properties) =>
+        properties switch
+        {
+            "Read" => GattProperty.Read,
+            "Read, Write" => GattProperty.Read | GattProperty.Write,
+            "Write" => GattProperty.Write,
+            "WriteWithoutResponse" => GattProperty.WriteNoResponse,
+            "Indicate" => GattProperty.Indicate,
+            "Notify" => GattProperty.Notify,
+            _ => GattProperty.Read
+        };
+
+    private GattPermission ConvertPermission(BLEPermissions permissions) =>
+        permissions switch
+        {
+            BLEPermissions.Readable => GattPermission.Read,
+            BLEPermissions.Writeable => GattPermission.Write,
+            BLEPermissions.ReadEncryptionRequired => GattPermission.ReadEncrypted,
+            BLEPermissions.WriteEncryptionRequired => GattPermission.WriteEncrypted,
+            _ => GattPermission.Read
+        };
+
     private void AddPeripherals(string[] uuids)
     {
         if (uuids != null)
@@ -218,6 +318,7 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
 
     #region Properties
 
+    private BLEAdvertisingManager? _AdvertisingManager;
     public bool IsPoweredOn => _Adapter?.State == State.On;
     public bool CanAccess => _Adapter?.IsEnabled ?? false;
     public bool IsAdvertising => false;
@@ -235,7 +336,10 @@ public partial class BLEAdapter : ScanCallback, IBluetoothAdapter
     public IConnectedDevice? ConnectedDevice { get; private set; }
 
     private readonly List<UUID> _PeripheralUUIDs = new();
+    private readonly BluetoothManager _BluetoothManager;
     private readonly BluetoothAdapter? _Adapter;
+    private GattServerCallback? _Manager;
+    private BluetoothGattServer? _Server;
     private readonly Dictionary<string, BluetoothDevice>? _DevicesFound;
 
     #endregion

@@ -164,8 +164,8 @@ public partial class BLEAdapter : IBluetoothAdapter
 
     public void StopAdvertising()
     {
-        if (_Manager.Advertising)
-            StopAdvertising();
+        //if (_Manager.Advertising)
+        //    StopAdvertising();
     }
 
     public bool StartScanningForDevices(string[]? uuids = null, int? manufacturerID = null)
