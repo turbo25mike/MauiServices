@@ -12,7 +12,7 @@ public static class ConfigExt
         builder.Services.AddSingleton<IKeyService, KeyService>();
         builder.Services.AddSingleton<IBluetoothAdapter, BLEAdapter>();
         builder.Services.AddSingleton<ILocationService, LocationService>();
-        builder.Services.AddSingleton<IDBService, DBService>();
+        //builder.Services.AddSingleton<IDBService, DBService>();
         builder.Services.AddSingleton<IBluetoothService, BluetoothService>();
         builder.Services.AddSingleton<IWebService, WebService>();
         builder.Services.AddSingleton<IFileService, FileService>();
