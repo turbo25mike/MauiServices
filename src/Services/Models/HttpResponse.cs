@@ -32,12 +32,16 @@ namespace Turbo.Maui.Services.Models
             if (r.IsSuccessStatusCode)
             {
                 var content = await r.Content.ReadAsStringAsync();
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
                 try
                 {
                     if (IsSimple(typeof(T)))
                         response.Data = (T)Convert.ChangeType(content, typeof(T));
                     else
-                        response.Data = string.IsNullOrWhiteSpace(content) ? default : JsonSerializer.Deserialize<T>(content);
+                        response.Data = string.IsNullOrWhiteSpace(content) ? default : JsonSerializer.Deserialize<T>(content,options);
                 }
                 catch (Exception)
                 {

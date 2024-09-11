@@ -19,7 +19,7 @@
 		<AssemblyName>Services</AssemblyName>
 		<PackageId>Turbo.Maui.Services</PackageId>
 		<PackageReadmeFile>ReadMe.md</PackageReadmeFile>
-		<VersionPrefix>8.4.3</VersionPrefix>
+		<VersionPrefix>8.4.4</VersionPrefix>
 		<Authors>Jeff Johnson</Authors>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 	</PropertyGroup>
@@ -62,8 +62,8 @@
 		<Folder Include="Controls\" />
 	</ItemGroup>
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.60" />
-		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.60" />
+		<PackageReference Include="Microsoft.Maui.Controls" Version="8.0.82" />
+		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="8.0.82" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
 		<PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
 		<PackageReference Include="System.IO.Hashing" Version="8.0.0" />
