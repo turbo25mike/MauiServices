@@ -14,7 +14,7 @@ public class AlertService : IAlertService
 {
     public async Task ShowAlertAsync(string title, string message, string cancel = "OK")
     {
-        if (Application.Current?.MainPage is null) throw new ArgumentNullException("Main Page not found.");
+        if (Application.Current.Windows[0].Page is null) throw new ArgumentNullException("Main Page not found.");
         await Application.Current.MainPage.DisplayAlert(title, message, cancel);
     }
 
